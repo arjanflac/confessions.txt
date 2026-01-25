@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROOF OF OMERTA / VERIFY</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b0d0f;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #9ef06a;
+        --accent-2: #f2c94c;
+        --panel: #111418;
+        --line: rgba(158, 240, 106, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        color: var(--fg);
+        background: radial-gradient(1200px 600px at 10% 10%, rgba(158, 240, 106, 0.08), transparent),
+          radial-gradient(900px 600px at 90% 20%, rgba(242, 201, 76, 0.06), transparent),
+          linear-gradient(160deg, #07090b 0%, #0d1116 60%, #0b0d0f 100%);
+      }
+
+      .grid {
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 80px 80px;
+        opacity: 0.25;
+        pointer-events: none;
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 1;
+        padding: 3rem 1.5rem 4rem;
+        display: flex;
+        justify-content: center;
+      }
+
+      .panel {
+        width: min(980px, 100%);
+        background: rgba(12, 15, 18, 0.78);
+        border: 1px solid rgba(158, 240, 106, 0.25);
+        border-radius: 18px;
+        padding: 2.5rem;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(6px);
+        animation: rise 0.8s ease-out;
+      }
+
+      h1 {
+        margin: 0 0 1rem;
+        font-family: "Unbounded", "Space Mono", sans-serif;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        letter-spacing: 0.08em;
+      }
+
+      .hint {
+        color: var(--muted);
+        margin-bottom: 1.5rem;
+      }
+
+      .input-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      input {
+        flex: 1 1 320px;
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(158, 240, 106, 0.35);
+        background: #0b0f13;
+        color: var(--fg);
+        font-size: 0.95rem;
+      }
+
+      button {
+        padding: 0.9rem 1.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        background: rgba(158, 240, 106, 0.1);
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(158, 240, 106, 0.25);
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      .status.ok {
+        color: var(--accent);
+      }
+
+      .status.warn {
+        color: var(--accent-2);
+      }
+
+      .block {
+        background: rgba(7, 9, 11, 0.8);
+        border: 1px solid rgba(158, 240, 106, 0.2);
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 0.4rem;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      ul {
+        margin: 0.6rem 0 0 1.2rem;
+        color: var(--muted);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <div class="wrap">
+      <section class="panel">
+        <h1>VERIFY</h1>
+        <div class="hint">
+          Paste a Base transaction hash (0x...) or an Arweave CID. This page never
+          uploads plaintext testimony.
+        </div>
+        <div class="input-row">
+          <input id="input" placeholder="0x... or Arweave CID" />
+          <button id="verify">VERIFY</button>
+        </div>
+        <div id="output"></div>
+      </section>
+    </div>
+    <script>
+      const output = document.getElementById("output");
+      const input = document.getElementById("input");
+      const button = document.getElementById("verify");
+
+      function hexToAscii(hex) {
+        const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+        if (!clean || clean.length % 2 !== 0) {
+          return null;
+        }
+        let text = "";
+        for (let i = 0; i < clean.length; i += 2) {
+          const byte = parseInt(clean.slice(i, i + 2), 16);
+          if (Number.isNaN(byte)) return null;
+          text += String.fromCharCode(byte);
+        }
+        return text;
+      }
+
+      function parseMetadata(text) {
+        const parts = text.split("|");
+        const fields = {};
+        for (const part of parts) {
+          const idx = part.indexOf(":");
+          if (idx === -1) continue;
+          const key = part.slice(0, idx).trim();
+          const value = part.slice(idx + 1).trim();
+          if (key) fields[key] = value;
+        }
+        return fields;
+      }
+
+      function renderStatus(status, ok = true) {
+        return `<div class="status ${ok ? "ok" : "warn"}">${status}</div>`;
+      }
+
+      function renderBlock(label, value) {
+        return `<div class="block"><div class="label">${label}</div>${value}</div>`;
+      }
+
+      function renderLegacy(cid) {
+        const url = `https://ipfs.io/ipfs/${cid}`;
+        output.innerHTML =
+          renderStatus("LEGACY ARCHIVE", false) +
+          renderBlock("IPFS", `<a href="${url}" target="_blank">${url}</a>`);
+      }
+
+      function renderArweave(cid) {
+        const url = `https://arweave.net/${cid}`;
+        output.innerHTML =
+          renderStatus("ARWEAVE ARCHIVE", true) +
+          renderBlock("Arweave", `<a href="${url}" target="_blank">${url}</a>`) +
+          renderBlock(
+            "Verification steps",
+            `Download locked_artifact.jpg -> extract payload.age -> decrypt -> compare CSHA (sha512)`
+          );
+      }
+
+      async function verifyTx(txHash) {
+        output.innerHTML = renderStatus("LOOKUP", false) + renderBlock("Status", "Fetching Base tx...");
+        const payload = {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_getTransactionByHash",
+          params: [txHash],
+        };
+        const res = await fetch("https://mainnet.base.org", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.result) {
+          output.innerHTML = renderStatus("NOT FOUND", false) + renderBlock("Status", "Transaction not found.");
+          return;
+        }
+        const inputHex = data.result.input;
+        const ascii = hexToAscii(inputHex);
+        if (!ascii) {
+          output.innerHTML = renderStatus("INVALID", false) + renderBlock("Status", "No metadata found in tx input.");
+          return;
+        }
+        const fields = parseMetadata(ascii);
+        const hasAr = fields.AR || fields.IPFS || fields.CID;
+        if (!Object.keys(fields).length || !hasAr) {
+          output.innerHTML = renderStatus("UNPARSED", false) + renderBlock("Raw", ascii);
+          return;
+        }
+        if (!fields.AR && (fields.IPFS || fields.CID)) {
+          const cid = fields.IPFS || fields.CID;
+          renderLegacy(cid);
+          return;
+        }
+        const arUrl = `https://arweave.net/${fields.AR}`;
+        output.innerHTML =
+          renderStatus("VERIFIED", true) +
+          renderBlock("Title", fields.TITLE || "Proof of Omerta") +
+          renderBlock("Arweave", `<a href="${arUrl}" target="_blank">${arUrl}</a>`) +
+          renderBlock("CSHA", `${fields.CSHA || ""} (${fields.ALG || "SHA512"})`) +
+          renderBlock(
+            "Verification steps",
+            `Download locked_artifact.jpg -> extract payload.age -> decrypt -> compare CSHA (sha512)`
+          );
+      }
+
+      button.addEventListener("click", async () => {
+        const value = input.value.trim();
+        if (!value) return;
+        const isTx = /^0x[a-fA-F0-9]{64}$/.test(value);
+        const isCid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
+        if (isTx) {
+          try {
+            await verifyTx(value);
+          } catch (err) {
+            output.innerHTML = renderStatus("ERROR", false) + renderBlock("Error", err.message || String(err));
+          }
+          return;
+        }
+        if (isCid) {
+          renderArweave(value);
+          return;
+        }
+        output.innerHTML = renderStatus("INVALID", false) + renderBlock("Status", "Input not recognized.");
+      });
+    </script>
+  </body>
+</html>

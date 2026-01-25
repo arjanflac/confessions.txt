@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROOF OF OMERTA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b0d0f;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #9ef06a;
+        --accent-2: #f2c94c;
+        --panel: #111418;
+        --line: rgba(158, 240, 106, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        color: var(--fg);
+        background: radial-gradient(1200px 600px at 10% 10%, rgba(158, 240, 106, 0.08), transparent),
+          radial-gradient(900px 600px at 90% 20%, rgba(242, 201, 76, 0.06), transparent),
+          linear-gradient(160deg, #07090b 0%, #0d1116 60%, #0b0d0f 100%);
+      }
+
+      .grid {
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 80px 80px;
+        opacity: 0.25;
+        pointer-events: none;
+      }
+
+      .wrap {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 1.5rem;
+      }
+
+      .panel {
+        width: min(920px, 100%);
+        background: rgba(12, 15, 18, 0.78);
+        border: 1px solid rgba(158, 240, 106, 0.25);
+        border-radius: 18px;
+        padding: 3rem;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(6px);
+        animation: rise 0.8s ease-out;
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-family: "Unbounded", "Space Mono", sans-serif;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        letter-spacing: 0.06em;
+      }
+
+      .rd {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--accent-2);
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        margin-bottom: 2rem;
+      }
+
+      p {
+        font-size: 1.1rem;
+        color: var(--muted);
+        max-width: 680px;
+        line-height: 1.7;
+      }
+
+      .actions {
+        margin-top: 2.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.9rem 1.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(158, 240, 106, 0.25);
+        background: rgba(158, 240, 106, 0.08);
+      }
+
+      .btn.secondary {
+        border-color: rgba(242, 201, 76, 0.5);
+        color: var(--accent-2);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .panel {
+          padding: 2rem 1.5rem;
+        }
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <div class="wrap">
+      <section class="panel">
+        <div class="rd">R&amp;D</div>
+        <h1>PROOF OF OMERTA</h1>
+        <p>permanently stored + cryptographically sealed testimony</p>
+        <div class="actions">
+          <a class="btn" href="verify.html">VERIFY</a>
+          <a class="btn secondary" href="https://github.com/USERNAME/confessionstxt-protocol">CODE</a>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
