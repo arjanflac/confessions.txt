@@ -22,8 +22,8 @@
         --text-1:      #e2e4e9;
         --text-2:      #a0a8b6;
         --text-3:      #5a6170;
-        --accent:      #b8975a;
-        --accent-dim:  #8a7046;
+        --accent:      #B05454;
+        --accent-dim:  #6E2D32;
 
         --font-title: "Cormorant Garamond", Georgia, serif;
         --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -59,8 +59,8 @@
         font-family: var(--font-body);
         line-height: 1.54;
         background:
-          radial-gradient(circle at 8% -14%, rgba(184, 151, 90, 0.04), transparent 39%),
-          radial-gradient(circle at 98% 0%, rgba(184, 151, 90, 0.03), transparent 43%),
+          radial-gradient(circle at 8% -14%, rgba(176, 84, 84, 0.04), transparent 39%),
+          radial-gradient(circle at 98% 0%, rgba(176, 84, 84, 0.03), transparent 43%),
           linear-gradient(var(--bg), var(--bg));
         position: relative;
         overscroll-behavior: none;
@@ -153,7 +153,14 @@
         font-weight: 600;
         letter-spacing: 0.22em;
         text-transform: uppercase;
+      }
+
+      .subtitle-name {
         color: var(--accent);
+      }
+
+      .subtitle-tag {
+        color: var(--text-3);
       }
 
       .tagline {
@@ -168,7 +175,7 @@
       .divider {
         width: 100%;
         height: 1px;
-        background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+        background: linear-gradient(90deg, transparent, rgba(176, 84, 84, 0.25), transparent);
         opacity: 0;
         animation: riseIn 0.5s ease 0.12s forwards;
       }
@@ -191,11 +198,12 @@
 
       .section-head {
         font-family: var(--font-mono);
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.2em;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.28em;
         text-transform: uppercase;
-        color: var(--accent);
+        color: var(--text-1);
+        text-align: center;
         padding-bottom: 0.85rem;
         margin-bottom: 0.2rem;
       }
@@ -225,7 +233,7 @@
         font-family: var(--font-mono);
         font-size: 0.73rem;
         font-weight: 600;
-        color: var(--accent);
+        color: var(--text-2);
         text-transform: uppercase;
         letter-spacing: 0.17em;
         padding-top: 0.08rem;
@@ -273,7 +281,7 @@
       }
 
       .btn:focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--text-3);
         outline-offset: 3px;
       }
 
@@ -282,24 +290,24 @@
       }
 
       .btn.primary {
-        background: var(--accent);
+        background: transparent;
         border-color: var(--accent);
-        color: var(--bg);
+        color: var(--accent);
       }
 
       .btn.primary:hover {
-        filter: brightness(1.05);
+        background: rgba(176, 84, 84, 0.08);
       }
 
       .btn.secondary {
         background: transparent;
-        border-color: var(--accent-dim);
-        color: var(--text-1);
+        border-color: var(--border);
+        color: var(--text-2);
       }
 
       .btn.secondary:hover {
-        border-color: var(--accent);
-        color: var(--accent);
+        border-color: var(--text-3);
+        color: var(--text-1);
       }
 
       /* -- Credit ------------------------------- */
@@ -321,8 +329,8 @@
       }
 
       .credit a:hover {
-        border-color: var(--accent);
-        color: var(--accent);
+        border-color: var(--text-3);
+        color: var(--text-1);
       }
 
       /* -- Mobile ------------------------------- */
@@ -405,8 +413,8 @@
         </div>
         <div class="hero-text">
           <h1 class="title">Proof of Omertà</h1>
-          <p class="subtitle">CONFESSIONS.txt (R&amp;D)</p>
-          <p class="tagline">Convert high-voltage memory into immutable, cryptographically sealed evidence artifacts.</p>
+          <p class="subtitle"><span class="subtitle-name">CONFESSIONS.txt</span> <span class="subtitle-tag">(R&amp;D)</span></p>
+          <p class="tagline">Transmute memory into immutable artifacts</p>
         </div>
       </header>
 
@@ -414,7 +422,7 @@
 
       <section class="protocol-section">
         <div class="protocol-inner">
-          <h2 class="section-head">Transmutation Protocol</h2>
+          <h2 class="section-head">Protocol</h2>
           <ol class="process-list" role="list">
             <li><span class="step-name">Record</span><span class="step-purpose">Capture testimony in plaintext.</span></li>
             <li><span class="step-name">Seal</span><span class="step-purpose">Encrypt the payload with age.</span></li>
@@ -428,7 +436,7 @@
       <div class="action-band">
         <nav class="actions" aria-label="Primary">
           <a class="btn primary" href="verify.html">Verify Artifact</a>
-          <a class="btn secondary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener">Get the CLI</a>
+          <a class="btn secondary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener">Code Repository</a>
         </nav>
       </div>
 
