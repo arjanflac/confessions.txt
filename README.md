@@ -1,6 +1,6 @@
-# CONFESSIONS.TXT (R&D)
+# CONFESSIONS.txt (R&D)
 
-CONFESSIONS.TXT is a local-first evidence toolchain that packages testimony and encrypts it with `age` into `payload.age`, embeds that encrypted payload into an image carrier with HStego, stores the locked artifact on Arweave for decentralized permanent retrieval by TXID, and publishes titled integrity metadata on Base for verifiable provenance.
+CONFESSIONS.txt is a local-first evidence toolchain that packages testimony and encrypts it with `age` into `payload.age`, embeds that encrypted payload into an image carrier with HStego, stores the locked artifact on Arweave for decentralized permanent retrieval by TXID, and publishes titled integrity metadata on Base for verifiable provenance.
 
 The project has two user-facing components:
 - `cli/confess.py`: build, upload, and verify artifacts.
