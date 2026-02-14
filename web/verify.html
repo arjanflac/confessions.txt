@@ -2,197 +2,672 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PROOF OF OMERTA / VERIFY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#09090b" />
+    <title>Verify — CONFESSION.TXT</title>
+    <meta name="description" content="Resolve testimony provenance from Base transaction or Arweave TXID. Local verification. No keys requested." />
+    <link rel="canonical" href="https://confessionstxt.xyz/verify.html" />
+    <link rel="icon" href="logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --bg: #0b0d0f;
-        --fg: #e5e7eb;
-        --muted: #9ca3af;
-        --accent: #9ef06a;
-        --accent-2: #f2c94c;
-        --panel: #111418;
-        --line: rgba(158, 240, 106, 0.15);
+        --bg:          #09090b;
+        --surface-1:   #111113;
+        --surface-2:   #18181b;
+        --border:      #1f1f23;
+        --text-1:      #e2e4e9;
+        --text-2:      #a0a8b6;
+        --text-3:      #5a6170;
+        --accent:      #b8975a;
+        --accent-dim:  #8a7046;
+
+        --font-title: "Cormorant Garamond", Georgia, serif;
+        --font-body: "IBM Plex Sans", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+        --radius-md: 10px;
+        --radius-lg: 16px;
+
+        --space-xs: 0.55rem;
+        --space-sm: 0.95rem;
+        --space-md: 1.4rem;
+        --space-lg: 2.1rem;
+        --space-xl: 3rem;
       }
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
       }
 
       body {
-        margin: 0;
         min-height: 100vh;
-        font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-        color: var(--fg);
-        background: radial-gradient(1200px 600px at 10% 10%, rgba(158, 240, 106, 0.08), transparent),
-          radial-gradient(900px 600px at 90% 20%, rgba(242, 201, 76, 0.06), transparent),
-          linear-gradient(160deg, #07090b 0%, #0d1116 60%, #0b0d0f 100%);
+        min-height: 100dvh;
+        color: var(--text-1);
+        font-family: var(--font-body);
+        line-height: 1.6;
+        background:
+          radial-gradient(circle at 12% -8%, rgba(184, 151, 90, 0.03), transparent 42%),
+          radial-gradient(circle at 90% 0%, rgba(184, 151, 90, 0.02), transparent 44%),
+          linear-gradient(var(--bg), var(--bg));
+        position: relative;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
 
-      .grid {
-        position: fixed;
-        inset: 0;
-        background-image: linear-gradient(var(--line) 1px, transparent 1px),
-          linear-gradient(90deg, var(--line) 1px, transparent 1px);
-        background-size: 80px 80px;
-        opacity: 0.25;
-        pointer-events: none;
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
       }
 
-      .wrap {
+      .shell {
+        width: 100%;
+        max-width: 820px;
+        margin: 0 auto;
+        padding: var(--space-lg) var(--space-md) var(--space-xl);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
         position: relative;
         z-index: 1;
-        padding: 3rem 1.5rem 4rem;
-        display: flex;
-        justify-content: center;
+        opacity: 0;
+        animation: riseIn 0.42s ease forwards;
       }
 
-      .panel {
-        width: min(980px, 100%);
-        background: rgba(12, 15, 18, 0.78);
-        border: 1px solid rgba(158, 240, 106, 0.25);
-        border-radius: 18px;
-        padding: 2.5rem;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(6px);
-        animation: rise 0.8s ease-out;
-      }
-
-      h1 {
-        margin: 0 0 1rem;
-        font-family: "Unbounded", "Space Mono", sans-serif;
-        font-size: clamp(2rem, 4vw, 3.2rem);
-        letter-spacing: 0.08em;
-      }
-
-      .hint {
-        color: var(--muted);
-        margin-bottom: 1.5rem;
-      }
-
-      .input-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-
-      input {
-        flex: 1 1 320px;
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        border: 1px solid rgba(158, 240, 106, 0.35);
-        background: #0b0f13;
-        color: var(--fg);
-        font-size: 0.95rem;
-      }
-
-      button {
-        padding: 0.9rem 1.6rem;
-        border-radius: 999px;
-        border: 1px solid var(--accent);
-        background: rgba(158, 240, 106, 0.1);
-        color: var(--accent);
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px rgba(158, 240, 106, 0.25);
-      }
-
-      .status {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        margin-bottom: 1rem;
-        font-weight: 700;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-      }
-
-      .status.ok {
-        color: var(--accent);
-      }
-
-      .status.warn {
-        color: var(--accent-2);
-      }
-
-      .block {
-        background: rgba(7, 9, 11, 0.8);
-        border: 1px solid rgba(158, 240, 106, 0.2);
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 1rem;
-      }
-
-      .label {
-        color: var(--muted);
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        margin-bottom: 0.4rem;
-      }
-
-      a {
-        color: var(--accent);
-      }
-
-      ul {
-        margin: 0.6rem 0 0 1.2rem;
-        color: var(--muted);
-      }
-
-      @keyframes rise {
+      @keyframes riseIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(6px);
         }
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
+
+      /* -- Navigation --------------------------- */
+
+      .nav {
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--text-2);
+        text-decoration: none;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        transition: color 0.15s ease;
+      }
+
+      .nav-home::before {
+        content: "\2190";
+        font-size: 1rem;
+      }
+
+      .nav-home:hover {
+        color: var(--accent);
+      }
+
+      .nav-home:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+
+      /* -- Cards -------------------------------- */
+
+      .card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+
+      /* -- Masthead ----------------------------- */
+
+      .masthead {
+        border-color: var(--border);
+      }
+
+      .masthead-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-sm);
+        flex-wrap: wrap;
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(184, 151, 90, 0.03);
+      }
+
+      .case-line,
+      .revision-line {
+        font-family: var(--font-mono);
+        font-size: 0.69rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+
+      .masthead-main {
+        padding: 1.2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .logo-frame {
+        width: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .logo-frame img {
+        width: 100%;
+        height: auto;
+      }
+
+      .title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .title {
+        font-family: var(--font-title);
+        font-size: clamp(1.9rem, 4.6vw, 2.95rem);
+        font-weight: 700;
+        color: var(--text-1);
+        line-height: 1.1;
+      }
+
+      .lede {
+        max-width: 700px;
+        color: var(--text-2);
+        font-size: 1rem;
+        line-height: 1.68;
+      }
+
+      /* -- Input panel -------------------------- */
+
+      .input-panel {
+        padding: 1rem 1.1rem 1.2rem;
+      }
+
+      .input-label {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 0.75rem;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 0.65rem;
+      }
+
+      .input-field {
+        flex: 1;
+        min-width: 0;
+        padding: 0.92rem 0.98rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface-2);
+        color: var(--text-1);
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        line-height: 1.45;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .input-field::placeholder {
+        color: var(--text-3);
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(184, 151, 90, 0.12);
+      }
+
+      .submit-btn {
+        padding: 0.92rem 1.42rem;
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-md);
+        background: var(--accent);
+        color: var(--bg);
+        font-family: var(--font-mono);
+        font-size: 0.71rem;
+        font-weight: 600;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.15s ease, filter 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .submit-btn:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+      }
+
+      .submit-btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .input-note {
+        margin-top: 0.65rem;
+        font-size: 0.83rem;
+        color: var(--text-3);
+      }
+
+      /* -- Console ------------------------------ */
+
+      .console {
+        min-height: 220px;
+        background: var(--surface-1);
+      }
+
+      .console-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        color: var(--text-3);
+        font-size: 0.94rem;
+        font-style: italic;
+        padding: 1rem;
+        text-align: center;
+      }
+
+      .console-content {
+        padding: 1rem 1.1rem 1.2rem;
+      }
+
+      /* -- Status badges ------------------------ */
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.45rem 0.85rem;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        border: 1px solid;
+        border-radius: 999px;
+        margin-bottom: 0.95rem;
+      }
+
+      .status.verified {
+        background: rgba(184, 151, 90, 0.1);
+        border-color: var(--accent-dim);
+        color: var(--accent);
+      }
+
+      .status.error {
+        background: rgba(180, 60, 60, 0.1);
+        border-color: #6b3030;
+        color: #c47070;
+      }
+
+      .status.warning {
+        background: rgba(184, 151, 90, 0.06);
+        border-color: var(--border);
+        color: var(--accent);
+      }
+
+      .status.loading {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: var(--border);
+        color: var(--text-2);
+      }
+
+      .status-icon {
+        font-size: 0.9rem;
+        line-height: 1;
+      }
+
+      /* -- Data grid ---------------------------- */
+
+      .data-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .data-block {
+        padding: 0.72rem 0;
+        border-bottom: 1px dashed var(--border);
+      }
+
+      .data-block:last-of-type {
+        border-bottom: none;
+      }
+
+      .data-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.55rem;
+        margin-bottom: 0.32rem;
+      }
+
+      .data-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+
+      .copy-btn {
+        padding: 0.24rem 0.58rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--text-2);
+        font-family: var(--font-mono);
+        font-size: 0.63rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+      }
+
+      .copy-btn:hover {
+        border-color: var(--accent-dim);
+        color: var(--accent);
+        background: rgba(184, 151, 90, 0.06);
+      }
+
+      .copy-btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .copy-btn.copied {
+        background: rgba(184, 151, 90, 0.1);
+        border-color: var(--accent-dim);
+        color: var(--accent);
+      }
+
+      .data-value {
+        font-family: var(--font-mono);
+        font-size: 0.83rem;
+        color: var(--text-1);
+        word-break: break-all;
+        line-height: 1.58;
+      }
+
+      .data-value a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .data-value a:hover {
+        border-bottom-color: var(--accent);
+      }
+
+      .data-value.mono {
+        font-size: 0.79rem;
+      }
+
+      /* -- Steps section ------------------------ */
+
+      .steps-section {
+        margin-top: 0.95rem;
+        padding-top: 0.95rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .steps-header {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 0.7rem;
+      }
+
+      .steps-list {
+        margin: 0;
+        padding-left: 1.3rem;
+        font-size: 0.9rem;
+        color: var(--text-2);
+        line-height: 1.72;
+      }
+
+      .steps-list li {
+        margin-bottom: 0.35rem;
+      }
+
+      .steps-list li::marker {
+        color: var(--text-3);
+      }
+
+      /* -- Commands block ----------------------- */
+
+      .commands {
+        margin-top: 0.95rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface-2);
+        overflow: hidden;
+      }
+
+      .commands-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-xs);
+        padding: 0.54rem 0.88rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .commands-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+
+      .commands pre {
+        margin: 0;
+        padding: 0.88rem;
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        line-height: 1.64;
+        color: var(--text-2);
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .commands code {
+        font-family: inherit;
+        color: var(--text-1);
+      }
+
+      .commands .comment {
+        color: var(--text-3);
+      }
+
+      /* -- Notes -------------------------------- */
+
+      .notes {
+        margin-top: 0.95rem;
+        padding: 0.85rem;
+        border-left: 3px solid var(--accent-dim);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        background: rgba(184, 151, 90, 0.04);
+      }
+
+      .notes-text {
+        font-size: 0.84rem;
+        color: var(--text-2);
+        line-height: 1.62;
+      }
+
+      /* -- Credit ------------------------------- */
+
+      .credit {
+        margin-top: auto;
+        padding-top: var(--space-sm);
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--text-3);
+      }
+
+      .credit a {
+        color: var(--text-2);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .credit a:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* -- Mobile ------------------------------- */
+
+      @media (max-width: 760px) {
+        .shell {
+          padding: 1.5rem 0.85rem 2.2rem;
+          gap: 0.85rem;
+        }
+
+        .masthead-main {
+          padding: 1rem;
+          gap: 0.75rem;
+        }
+
+        .logo-frame {
+          width: 58px;
+        }
+
+        .input-row {
+          flex-direction: column;
+        }
+
+        .submit-btn {
+          width: 100%;
+        }
+
+        .data-header {
+          flex-wrap: wrap;
+        }
+
+        .title {
+          font-size: 1.7rem;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="grid"></div>
-    <div class="wrap">
-      <section class="panel">
-        <h1>VERIFY</h1>
-        <div class="hint">
-          Paste a Base transaction hash (0x...) or an Arweave CID. This page never
-          uploads plaintext testimony.
-        </div>
-        <div class="input-row">
-          <input id="input" placeholder="0x... or Arweave CID" />
-          <button id="verify">VERIFY</button>
-        </div>
-        <div id="output"></div>
-      </section>
-    </div>
-    <script>
-      const output = document.getElementById("output");
-      const input = document.getElementById("input");
-      const button = document.getElementById("verify");
+    <main class="shell">
+      <nav class="nav" aria-label="Breadcrumb">
+        <a href="index.html" class="nav-home">Return</a>
+      </nav>
 
+      <header class="masthead card">
+        <div class="masthead-meta">
+          <span class="case-line">Evidence Console</span>
+          <span class="revision-line">Local Verification</span>
+        </div>
+        <div class="masthead-main">
+          <div class="logo-frame">
+            <img src="logo.png" alt="" />
+          </div>
+          <div class="title-group">
+            <h1 class="title">Verify</h1>
+            <p class="lede">Resolve a Base transaction hash or Arweave TXID into an auditable evidence trail.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="input-panel card">
+        <label class="input-label" for="input">Artifact Locator</label>
+        <div class="input-row">
+          <input
+            id="input"
+            class="input-field"
+            type="text"
+            placeholder="0x... transaction hash or Arweave TXID"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="input-help"
+          />
+          <button id="verify" class="submit-btn">Resolve Artifact</button>
+        </div>
+        <p id="input-help" class="input-note">Verification runs locally in your browser. No keys are requested.</p>
+      </section>
+
+      <section id="console" class="console card" aria-live="polite" aria-atomic="true">
+        <div class="console-empty">Awaiting a transaction hash or Arweave TXID evidence pointer.</div>
+      </section>
+
+    </main>
+
+    <script>
+      // Note: innerHTML is used with proper HTML escaping via escapeHtml() function
+      // All user input and external data is sanitized before insertion
+      const consoleEl = document.getElementById("console");
+      const inputEl = document.getElementById("input");
+      const verifyBtn = document.getElementById("verify");
+
+      // Utility: hex to ASCII
       function hexToAscii(hex) {
         const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
-        if (!clean || clean.length % 2 !== 0) {
-          return null;
-        }
+        if (!clean || clean.length % 2 !== 0) return null;
         let text = "";
         for (let i = 0; i < clean.length; i += 2) {
           const byte = parseInt(clean.slice(i, i + 2), 16);
@@ -202,9 +677,10 @@
         return text;
       }
 
+      // Utility: parse V:2 metadata format
       function parseMetadata(text) {
-        const parts = text.split("|");
         const fields = {};
+        const parts = text.split("|");
         for (const part of parts) {
           const idx = part.indexOf(":");
           if (idx === -1) continue;
@@ -215,98 +691,277 @@
         return fields;
       }
 
-      function renderStatus(status, ok = true) {
-        return `<div class="status ${ok ? "ok" : "warn"}">${status}</div>`;
+      // Utility: escape HTML - prevents XSS by encoding special characters
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
-      function renderBlock(label, value) {
-        return `<div class="block"><div class="label">${label}</div>${value}</div>`;
+      // Utility: sanitize ID - only allows alphanumeric, underscore, hyphen
+      function safeId(value) {
+        return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
       }
 
-      function renderLegacy(cid) {
-        const url = `https://ipfs.io/ipfs/${cid}`;
-        output.innerHTML =
-          renderStatus("LEGACY ARCHIVE", false) +
-          renderBlock("IPFS", `<a href="${url}" target="_blank">${url}</a>`);
-      }
-
-      function renderArweave(cid) {
-        const url = `https://arweave.net/${cid}`;
-        output.innerHTML =
-          renderStatus("ARWEAVE ARCHIVE", true) +
-          renderBlock("Arweave", `<a href="${url}" target="_blank">${url}</a>`) +
-          renderBlock(
-            "Verification steps",
-            `Download locked_artifact.jpg -> extract payload.age -> decrypt -> compare CSHA (sha512)`
-          );
-      }
-
-      async function verifyTx(txHash) {
-        output.innerHTML = renderStatus("LOOKUP", false) + renderBlock("Status", "Fetching Base tx...");
-        const payload = {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_getTransactionByHash",
-          params: [txHash],
-        };
-        const res = await fetch("https://mainnet.base.org", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (!data.result) {
-          output.innerHTML = renderStatus("NOT FOUND", false) + renderBlock("Status", "Transaction not found.");
-          return;
-        }
-        const inputHex = data.result.input;
-        const ascii = hexToAscii(inputHex);
-        if (!ascii) {
-          output.innerHTML = renderStatus("INVALID", false) + renderBlock("Status", "No metadata found in tx input.");
-          return;
-        }
-        const fields = parseMetadata(ascii);
-        const hasAr = fields.AR || fields.IPFS || fields.CID;
-        if (!Object.keys(fields).length || !hasAr) {
-          output.innerHTML = renderStatus("UNPARSED", false) + renderBlock("Raw", ascii);
-          return;
-        }
-        if (!fields.AR && (fields.IPFS || fields.CID)) {
-          const cid = fields.IPFS || fields.CID;
-          renderLegacy(cid);
-          return;
-        }
-        const arUrl = `https://arweave.net/${fields.AR}`;
-        output.innerHTML =
-          renderStatus("VERIFIED", true) +
-          renderBlock("Title", fields.TITLE || "Proof of Omerta") +
-          renderBlock("Arweave", `<a href="${arUrl}" target="_blank">${arUrl}</a>`) +
-          renderBlock("CSHA", `${fields.CSHA || ""} (${fields.ALG || "SHA512"})`) +
-          renderBlock(
-            "Verification steps",
-            `Download locked_artifact.jpg -> extract payload.age -> decrypt -> compare CSHA (sha512)`
-          );
-      }
-
-      button.addEventListener("click", async () => {
-        const value = input.value.trim();
-        if (!value) return;
-        const isTx = /^0x[a-fA-F0-9]{64}$/.test(value);
-        const isCid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
-        if (isTx) {
-          try {
-            await verifyTx(value);
-          } catch (err) {
-            output.innerHTML = renderStatus("ERROR", false) + renderBlock("Error", err.message || String(err));
+      // Copy to clipboard
+      async function copyToClipboard(text, btn) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
           }
-          return;
+          const originalText = btn.textContent;
+          btn.textContent = "Copied";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove("copied");
+          }, 2000);
+        } catch (err) {
+          console.error("Copy failed:", err);
         }
-        if (isCid) {
+      }
+
+      // Render status badge - all content is escaped
+      function renderStatus(text, type) {
+        const icons = {
+          verified: "&#10003;",
+          error: "&#10007;",
+          warning: "&#9888;",
+          loading: "&#8230;"
+        };
+        return '<div class="status ' + type + '"><span class="status-icon">' + (icons[type] || icons.loading) + '</span>' + escapeHtml(text) + '</div>';
+      }
+
+      // Render data block with optional copy button - all content is escaped
+      function renderDataBlock(label, value, options) {
+        options = options || {};
+        var copyValue = options.copyValue;
+        var isLink = options.isLink;
+        var mono = options.mono;
+        var copyBtn = copyValue
+          ? '<button class="copy-btn" data-copy="' + escapeHtml(copyValue) + '" aria-label="Copy ' + escapeHtml(label) + '">Copy</button>'
+          : "";
+        var valueHtml = isLink
+          ? '<a href="' + escapeHtml(value) + '" target="_blank" rel="noopener">' + escapeHtml(value) + '</a>'
+          : escapeHtml(value);
+        var monoClass = mono ? " mono" : "";
+        return '<div class="data-block"><div class="data-header"><span class="data-label">' + escapeHtml(label) + '</span>' + copyBtn + '</div><div class="data-value' + monoClass + '">' + valueHtml + '</div></div>';
+      }
+
+      // Render steps section - all content is escaped
+      function renderSteps(steps, commands) {
+        var stepsHtml = "";
+        for (var i = 0; i < steps.length; i++) {
+          stepsHtml += '<li>' + escapeHtml(steps[i]) + '</li>';
+        }
+        var commandsHtml = "";
+        if (commands) {
+          var escapedCommands = escapeHtml(commands).replace(/^(# .+)$/gm, '<span class="comment">$1</span>');
+          commandsHtml = '<div class="commands"><div class="commands-header"><span class="commands-label">Commands</span><button class="copy-btn" data-copy="' + escapeHtml(commands) + '" aria-label="Copy commands">Copy</button></div><pre><code>' + escapedCommands + '</code></pre></div>';
+        }
+        return '<div class="steps-section"><div class="steps-header">Verification Steps</div><ol class="steps-list">' + stepsHtml + '</ol>' + commandsHtml + '</div>';
+      }
+
+      // Render notes section
+      function renderNotes() {
+        return '<div class="notes"><p class="notes-text">Verification runs locally in your browser. No keys are requested. Decryption requires your passphrase or recipient key.</p></div>';
+      }
+
+      // Handle Arweave TXID directly
+      function renderArweave(cid) {
+        var safeCid = safeId(cid);
+        var arweaveUrl = "https://arweave.net/" + safeCid;
+        var steps = [
+          "Download the locked artifact from Arweave",
+          "Extract payload.age with the confess CLI or HStego",
+          "If you have a CSHA value, compute sha512(payload.age) and compare",
+          "Optional: decrypt payload.age locally with age"
+        ];
+        var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
+
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified") + '<div class="data-grid">' + renderDataBlock("Arweave TXID", cid, { copyValue: cid, mono: true }) + renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true }) + '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
+        attachCopyHandlers();
+      }
+
+      // Handle legacy IPFS
+      function renderLegacy(cid) {
+        var safeCid = safeId(cid);
+        var ipfsUrl = "https://ipfs.io/ipfs/" + safeCid;
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. V:2 metadata with Arweave is recommended for permanence guarantees.</p></div></div>';
+        attachCopyHandlers();
+      }
+
+      // Handle Base transaction
+      async function verifyTx(txHash) {
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Querying Ledger", "loading") + '<div class="data-grid">' + renderDataBlock("Status", "Resolving Base transaction...") + '</div></div>';
+
+        try {
+          var payload = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_getTransactionByHash",
+            params: [txHash],
+          };
+          var res = await fetch("https://mainnet.base.org", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          var data = await res.json();
+
+          if (!data.result) {
+            consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Not Found", "error") + '<div class="data-grid">' + renderDataBlock("Status", "Transaction not found on Base network") + '</div></div>';
+            return;
+          }
+
+          var inputHex = data.result.input;
+          var ascii = hexToAscii(inputHex);
+
+          if (!ascii) {
+            consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid", "error") + '<div class="data-grid">' + renderDataBlock("Status", "No readable metadata found in transaction input") + '</div></div>';
+            return;
+          }
+
+          var fields = parseMetadata(ascii);
+          var hasAr = fields.AR || fields.IPFS || fields.CID;
+
+          if (!Object.keys(fields).length || !hasAr) {
+            // Try to detect legacy V1 format: "cid: <value> proof: <value>"
+            var legacyCidMatch = ascii.match(/cid:\s*([a-zA-Z0-9_-]+)/i);
+            var legacyProofMatch = ascii.match(/proof:\s*([a-fA-F0-9]+)/i);
+
+            if (legacyCidMatch) {
+              var legacyCid = legacyCidMatch[1];
+              var legacyProof = legacyProofMatch ? legacyProofMatch[1] : null;
+              var ipfsUrl = "https://ipfs.io/ipfs/" + safeId(legacyCid);
+
+              // Note: all dynamic values are escaped via escapeHtml()/safeId() inside renderDataBlock/renderStatus
+              var legacyHtml = '<div class="console-content">' + renderStatus("Legacy Protocol (V1)", "warning") + '<div class="data-grid">';
+              legacyHtml += renderDataBlock("IPFS CID", legacyCid, { copyValue: legacyCid, mono: true });
+              legacyHtml += renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true });
+              if (legacyProof) {
+                legacyHtml += renderDataBlock("Proof Hash", legacyProof, { copyValue: legacyProof, mono: true });
+              }
+              legacyHtml += '</div>';
+              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an earlier version of the protocol (IPFS-based). The current protocol (V:2) uses Arweave for permanence.</p></div>';
+              legacyHtml += '</div>';
+              consoleEl.innerHTML = legacyHtml;
+              attachCopyHandlers();
+              return;
+            }
+
+            consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Unparsed", "warning") + '<div class="data-grid">' + renderDataBlock("Raw Data", ascii, { mono: true }) + '</div></div>';
+            return;
+          }
+
+          // Legacy IPFS format
+          if (!fields.AR && (fields.IPFS || fields.CID)) {
+            var cid = fields.IPFS || fields.CID;
+            renderLegacy(cid);
+            return;
+          }
+
+          // V:2 format with Arweave
+          var arId = safeId(fields.AR);
+          var arweaveUrl = "https://arweave.net/" + arId;
+
+          var steps = [
+            "Download the locked artifact from Arweave",
+            "Extract payload.age with the confess CLI or HStego",
+            "Compute sha512(payload.age) and compare to CSHA",
+            "Optional: decrypt payload.age locally with age"
+          ];
+          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\nhstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum\nsha512sum payload.age\n# Expected: " + (fields.CSHA || "[CSHA value]") + "  payload.age";
+
+          var html = '<div class="console-content">' + renderStatus("Resolved", "verified") + '<div class="data-grid">';
+
+          if (fields.TITLE) {
+            html += renderDataBlock("Title", fields.TITLE);
+          }
+          if (fields.V) {
+            html += renderDataBlock("Version", "V:" + fields.V, { mono: true });
+          }
+          html += renderDataBlock("Arweave TXID", fields.AR, { copyValue: fields.AR, mono: true });
+          html += renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true });
+          if (fields.CSHA) {
+            html += renderDataBlock("CSHA", fields.CSHA + " (" + (fields.ALG || "SHA512") + ")", { copyValue: fields.CSHA, mono: true });
+          }
+          if (fields.FILE) {
+            html += renderDataBlock("File", fields.FILE);
+          }
+          if (fields.NOTE) {
+            html += renderDataBlock("Note", fields.NOTE);
+          }
+
+          html += '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
+          consoleEl.innerHTML = html;
+          attachCopyHandlers();
+
+        } catch (err) {
+          consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Error", "error") + '<div class="data-grid">' + renderDataBlock("Details", err.message || String(err)) + '</div></div>';
+        }
+      }
+
+      // Attach copy button handlers
+      function attachCopyHandlers() {
+        var buttons = consoleEl.querySelectorAll("[data-copy]");
+        buttons.forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var text = btn.getAttribute("data-copy");
+            copyToClipboard(text, btn);
+          });
+        });
+      }
+
+      // Main verify handler
+      async function handleVerify() {
+        var value = inputEl.value.trim();
+        if (!value) return;
+
+        var isTx = /^0x[a-fA-F0-9]{64}$/.test(value);
+        var isIpfs = /^(bafy|bafk|Qm)/i.test(value);
+        var isCid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
+
+        if (isTx) {
+          await verifyTx(value.toLowerCase());
+        } else if (isIpfs) {
+          renderLegacy(value);
+        } else if (isCid) {
           renderArweave(value);
-          return;
+        } else {
+          consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid Input", "error") + '<div class="data-grid">' + renderDataBlock("Status", "Input not recognized. Enter a 0x... transaction hash or Arweave TXID.") + '</div></div>';
         }
-        output.innerHTML = renderStatus("INVALID", false) + renderBlock("Status", "Input not recognized.");
+      }
+
+      // Event listeners
+      verifyBtn.addEventListener("click", handleVerify);
+      inputEl.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") handleVerify();
       });
+
+      // Check for URL params on load (?cid= kept for backwards compat)
+      var urlParams = new URLSearchParams(window.location.search);
+      var txParam = urlParams.get("tx");
+      var cidParam = urlParams.get("cid");
+      if (txParam) {
+        inputEl.value = txParam;
+        handleVerify();
+      } else if (cidParam) {
+        inputEl.value = cidParam;
+        handleVerify();
+      }
     </script>
   </body>
 </html>

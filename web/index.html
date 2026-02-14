@@ -2,133 +2,101 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PROOF OF OMERTA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#09090b" />
+    <title>CONFESSION.TXT — Proof of Omertà</title>
+    <meta name="description" content="Five-step testimony protocol: record, seal, conceal, archive, and broadcast named evidence artifacts." />
+    <link rel="canonical" href="https://confessionstxt.xyz/" />
+    <link rel="icon" href="logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --bg: #0b0d0f;
-        --fg: #e5e7eb;
-        --muted: #9ca3af;
-        --accent: #9ef06a;
-        --accent-2: #f2c94c;
-        --panel: #111418;
-        --line: rgba(158, 240, 106, 0.15);
+        --bg:          #09090b;
+        --surface-1:   #111113;
+        --surface-2:   #18181b;
+        --border:      #1f1f23;
+        --text-1:      #e2e4e9;
+        --text-2:      #a0a8b6;
+        --text-3:      #5a6170;
+        --accent:      #b8975a;
+        --accent-dim:  #8a7046;
+
+        --font-title: "Cormorant Garamond", Georgia, serif;
+        --font-body: "IBM Plex Sans", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+        --radius-md: 10px;
+        --radius-lg: 16px;
+
+        --space-xs: 0.55rem;
+        --space-sm: 0.95rem;
+        --space-md: 1.4rem;
+        --space-lg: 2.1rem;
+        --space-xl: 3rem;
       }
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
       }
 
       body {
-        margin: 0;
         min-height: 100vh;
-        font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-        color: var(--fg);
-        background: radial-gradient(1200px 600px at 10% 10%, rgba(158, 240, 106, 0.08), transparent),
-          radial-gradient(900px 600px at 90% 20%, rgba(242, 201, 76, 0.06), transparent),
-          linear-gradient(160deg, #07090b 0%, #0d1116 60%, #0b0d0f 100%);
+        min-height: 100dvh;
+        color: var(--text-1);
+        font-family: var(--font-body);
+        line-height: 1.54;
+        background:
+          radial-gradient(circle at 8% -14%, rgba(184, 151, 90, 0.04), transparent 39%),
+          radial-gradient(circle at 98% 0%, rgba(184, 151, 90, 0.03), transparent 43%),
+          linear-gradient(var(--bg), var(--bg));
+        position: relative;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
 
-      .grid {
-        position: fixed;
-        inset: 0;
-        background-image: linear-gradient(var(--line) 1px, transparent 1px),
-          linear-gradient(90deg, var(--line) 1px, transparent 1px);
-        background-size: 80px 80px;
-        opacity: 0.25;
-        pointer-events: none;
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
       }
 
-      .wrap {
+      .shell {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 2.5rem var(--space-md) 1.5rem;
+        padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.4rem;
         position: relative;
         z-index: 1;
-        display: flex;
-        min-height: 100vh;
-        align-items: center;
-        justify-content: center;
-        padding: 4rem 1.5rem;
       }
 
-      .panel {
-        width: min(920px, 100%);
-        background: rgba(12, 15, 18, 0.78);
-        border: 1px solid rgba(158, 240, 106, 0.25);
-        border-radius: 18px;
-        padding: 3rem;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(6px);
-        animation: rise 0.8s ease-out;
-      }
-
-      h1 {
-        margin: 0 0 0.5rem;
-        font-family: "Unbounded", "Space Mono", sans-serif;
-        font-size: clamp(2.5rem, 6vw, 4.5rem);
-        letter-spacing: 0.06em;
-      }
-
-      .rd {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        font-size: 0.85rem;
-        color: var(--accent-2);
-        text-transform: uppercase;
-        letter-spacing: 0.3em;
-        margin-bottom: 2rem;
-      }
-
-      p {
-        font-size: 1.1rem;
-        color: var(--muted);
-        max-width: 680px;
-        line-height: 1.7;
-      }
-
-      .actions {
-        margin-top: 2.5rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.9rem 1.8rem;
-        border-radius: 999px;
-        border: 1px solid var(--accent);
-        color: var(--accent);
-        text-decoration: none;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      }
-
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px rgba(158, 240, 106, 0.25);
-        background: rgba(158, 240, 106, 0.08);
-      }
-
-      .btn.secondary {
-        border-color: rgba(242, 201, 76, 0.5);
-        color: var(--accent-2);
-      }
-
-      @keyframes rise {
+      @keyframes riseIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(6px);
         }
         to {
           opacity: 1;
@@ -136,29 +104,335 @@
         }
       }
 
-      @media (max-width: 640px) {
-        .panel {
-          padding: 2rem 1.5rem;
+      /* -- Hero -------------------------------- */
+
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.8rem;
+        width: 100%;
+        opacity: 0;
+        animation: riseIn 0.5s ease forwards;
+      }
+
+      .logo-frame {
+        width: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .logo-frame img {
+        width: 100%;
+        height: auto;
+      }
+
+      .hero-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.45rem;
+      }
+
+      .title {
+        font-family: var(--font-title);
+        font-size: clamp(2.6rem, 7vw, 4.2rem);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 0.95;
+        color: var(--text-1);
+      }
+
+      .subtitle {
+        font-family: var(--font-mono);
+        font-size: 0.73rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .tagline {
+        max-width: 580px;
+        font-size: 1.05rem;
+        line-height: 1.64;
+        color: var(--text-2);
+      }
+
+      /* -- Divider ------------------------------ */
+
+      .divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.12s forwards;
+      }
+
+      /* -- Protocol section --------------------- */
+
+      .protocol-section {
+        width: 100%;
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.2s forwards;
+      }
+
+      .protocol-inner {
+        padding: 1.3rem 1.4rem 1.4rem;
+      }
+
+      .section-head {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        padding-bottom: 0.85rem;
+        margin-bottom: 0.2rem;
+      }
+
+      .process-list {
+        list-style: none;
+        display: grid;
+        gap: 0;
+      }
+
+      .process-list li {
+        display: grid;
+        grid-template-columns: minmax(6.5rem, 8rem) 1fr;
+        align-items: start;
+        gap: 0.9rem;
+        line-height: 1.5;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .process-list li:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .step-name {
+        font-family: var(--font-mono);
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.17em;
+        padding-top: 0.08rem;
+      }
+
+      .step-purpose {
+        color: var(--text-1);
+        font-size: 0.97rem;
+      }
+
+      /* -- Actions ------------------------------ */
+
+      .action-band {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.3s forwards;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.9rem;
+        padding: 0.75rem 1.8rem;
+        border-radius: var(--radius-md);
+        border: 1px solid;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg);
+      }
+
+      .btn.primary:hover {
+        filter: brightness(1.05);
+      }
+
+      .btn.secondary {
+        background: transparent;
+        border-color: var(--accent-dim);
+        color: var(--text-1);
+      }
+
+      .btn.secondary:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* -- Credit ------------------------------- */
+
+      .credit {
+        margin-top: auto;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--text-3);
+      }
+
+      .credit a {
+        color: var(--text-2);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .credit a:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* -- Mobile ------------------------------- */
+
+      @media (max-width: 760px) {
+        .shell {
+          padding: 1.2rem 1.25rem 1.2rem;
+          padding-top: max(1.2rem, env(safe-area-inset-top, 0px));
+          padding-bottom: max(1.2rem, env(safe-area-inset-bottom, 0px));
+          gap: 0.75rem;
         }
+
+        .hero {
+          gap: 0.5rem;
+        }
+
+        .logo-frame {
+          width: 115px;
+        }
+
+        .hero-text {
+          gap: 0.3rem;
+        }
+
+        .tagline {
+          font-size: 0.88rem;
+          line-height: 1.5;
+        }
+
+        .section-head {
+          padding-bottom: 0.45rem;
+          font-size: 0.65rem;
+        }
+
+        .protocol-inner {
+          padding: 0.7rem 0.9rem 0.8rem;
+        }
+
+        .process-list li {
+          grid-template-columns: 1fr;
+          gap: 0.1rem;
+          padding: 0.35rem 0;
+        }
+
+        .step-name {
+          font-size: 0.68rem;
+        }
+
+        .step-purpose {
+          font-size: 0.92rem;
+        }
+
+        .action-band {
+          gap: 0.55rem;
+        }
+
         .actions {
           flex-direction: column;
-          align-items: stretch;
+          width: 100%;
+          gap: 0.45rem;
+        }
+
+        .btn {
+          width: 100%;
+          min-height: 2.5rem;
+          padding: 0.55rem 1.4rem;
+        }
+
+        .credit {
+          font-size: 0.68rem;
         }
       }
     </style>
   </head>
   <body>
-    <div class="grid"></div>
-    <div class="wrap">
-      <section class="panel">
-        <div class="rd">R&amp;D</div>
-        <h1>PROOF OF OMERTA</h1>
-        <p>permanently stored + cryptographically sealed testimony</p>
-        <div class="actions">
-          <a class="btn" href="verify.html">VERIFY</a>
-          <a class="btn secondary" href="https://github.com/USERNAME/confessionstxt-protocol">CODE</a>
+    <main class="shell">
+      <header class="hero">
+        <div class="logo-frame">
+          <img src="logo.png" alt="" />
+        </div>
+        <div class="hero-text">
+          <h1 class="title">Proof of Omertà</h1>
+          <p class="subtitle">CONFESSION.TXT (R&amp;D)</p>
+          <p class="tagline">Convert high-voltage memory into immutable, cryptographically sealed evidence artifacts.</p>
+        </div>
+      </header>
+
+      <div class="divider" role="separator"></div>
+
+      <section class="protocol-section">
+        <div class="protocol-inner">
+          <h2 class="section-head">Transmutation Protocol</h2>
+          <ol class="process-list" role="list">
+            <li><span class="step-name">Record</span><span class="step-purpose">Capture testimony in plaintext.</span></li>
+            <li><span class="step-name">Seal</span><span class="step-purpose">Encrypt the payload with age.</span></li>
+            <li><span class="step-name">Conceal</span><span class="step-purpose">Embed the sealed payload into a carrier artifact via HStego.</span></li>
+            <li><span class="step-name">Archive</span><span class="step-purpose">Store the locked artifact on Arweave.</span></li>
+            <li><span class="step-name">Broadcast</span><span class="step-purpose">Publish the artifact as a titled work on Base.</span></li>
+          </ol>
         </div>
       </section>
-    </div>
+
+      <div class="action-band">
+        <nav class="actions" aria-label="Primary">
+          <a class="btn primary" href="verify.html">Verify Artifact</a>
+          <a class="btn secondary" href="https://github.com/arjanflac/confessionstxt-protocol" target="_blank" rel="noopener">Get the CLI</a>
+        </nav>
+      </div>
+
+      <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener">@arjan.flac</a></footer>
+    </main>
   </body>
 </html>

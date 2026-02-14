@@ -19,3 +19,10 @@ dist
 .next
 .wrangler
 .DS_Store
+
+# Dev/design screenshots
+index-*.png
+verify-*.png
+
+# Tooling
+.playwright-mcp/
