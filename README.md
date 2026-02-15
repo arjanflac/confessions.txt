@@ -27,7 +27,7 @@ A **locked artifact**:
 2. **Pack**: package into an archive boundary (`payload.tar.gz`)
 3. **Seal**: encrypt with `age` → `payload.age`
 4. **Conceal**: embed `payload.age` into a cover image using HStego → `locked_artifact.jpg`
-5. **Archive**: upload `locked_artifact.jpg` to Arweave via ArDrive CLI → Arweave CID/TXID
+5. **Archive**: upload `locked_artifact.jpg` to Arweave via ArDrive CLI → Arweave TXID
 6. **Broadcast (optional)**: generate Base calldata containing a catalog-style metadata label (`TITLE | ARTXID | CSHA`).  
    User signs/broadcasts manually (wallet custody remains with the operator).
 
@@ -173,8 +173,8 @@ Capture the folder ID you plan to upload into.
 python3 cli/confess.py push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ID>
 ```
 Outputs:
-- Arweave CID/TXID
-- `https://arweave.net/<CID>`
+- Arweave TXID
+- `https://arweave.net/<TXID>`
 
 ### 6) Generate Base calldata (optional)
 ```bash
@@ -225,7 +225,7 @@ Why `|` delimiters:
 Public readout (metadata + instructions):
 - **https://confessionstxt.art/verify**
   - Base tx hash: resolves protocol metadata (`ARTXID`, `CSHA`, optional `STEG`)
-  - Arweave CID/TXID: resolves archive location + local verification steps
+  - Arweave TXID: resolves archive location + local verification steps
 
 Local verification (operator):
 ```bash

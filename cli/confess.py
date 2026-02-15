@@ -616,10 +616,10 @@ def _ardrive_upload(file_path: Path, wallet_path: Path, folder_id: str, dest_nam
         detail = res.stderr.strip() or res.stdout.strip()
         raise RuntimeError("ArDrive upload failed." + (f" Details: {detail}" if detail else ""))
 
-    cid = _extract_ardrive_data_tx(res.stdout + "\n" + res.stderr)
-    if not cid:
+    txid = _extract_ardrive_data_tx(res.stdout + "\n" + res.stderr)
+    if not txid:
         raise RuntimeError("ArDrive upload succeeded but no dataTxId was found in output.")
-    return cid
+    return txid
 
 
 def _push(args: argparse.Namespace) -> int:
@@ -645,17 +645,17 @@ def _push(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        cid = _ardrive_upload(file_path, wallet_path, folder_id, args.dest_name)
+        txid = _ardrive_upload(file_path, wallet_path, folder_id, args.dest_name)
     except RuntimeError as e:
         _err(str(e))
         return 1
 
-    url = f"{ARWEAVE_URL_PREFIX}{cid}"
-    print(f"Arweave TXID: {cid}")
+    url = f"{ARWEAVE_URL_PREFIX}{txid}"
+    print(f"Arweave TXID: {txid}")
     print(f"URL: {url}")
     print("\nReceipt:")
     print("--------")
-    print(f"TXID: {cid}")
+    print(f"TXID: {txid}")
     print(f"URL: {url}")
     print(f"FILE: {file_path.name}")
     return 0

@@ -793,9 +793,9 @@
       }
 
       // Handle Arweave TXID directly
-      function renderArweave(cid) {
-        var safeCid = safeId(cid);
-        var arweaveUrl = "https://arweave.net/" + safeCid;
+      function renderArweave(txid) {
+        var safeTxid = safeId(txid);
+        var arweaveUrl = "https://arweave.net/" + safeTxid;
         var steps = [
           "Download the locked artifact from Arweave",
           "Extract payload.age with the confess CLI or HStego",
@@ -804,7 +804,7 @@
         ];
         var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
 
-        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified") + '<div class="data-grid">' + renderDataBlock("Arweave TXID", cid, { copyValue: cid, mono: true }) + renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true }) + '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified") + '<div class="data-grid">' + renderDataBlock("Arweave TXID", txid, { copyValue: txid, mono: true }) + renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true }) + '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
         attachCopyHandlers();
       }
 
@@ -812,7 +812,7 @@
       function renderLegacy(cid) {
         var safeCid = safeId(cid);
         var ipfsUrl = "https://ipfs.io/ipfs/" + safeCid;
-        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. Current Arweave labels use ARTXID + CSHA.</p></div></div>';
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. Current labels use ARTXID + CSHA.</p></div></div>';
         attachCopyHandlers();
       }
 
@@ -868,7 +868,7 @@
                 legacyHtml += renderDataBlock("Proof Hash", legacyProof, { copyValue: legacyProof, mono: true });
               }
               legacyHtml += '</div>';
-              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an older IPFS-based format. Current Arweave labels use ARTXID + CSHA.</p></div>';
+              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an older IPFS-based format. Current labels use ARTXID + CSHA.</p></div>';
               legacyHtml += '</div>';
               consoleEl.innerHTML = legacyHtml;
               attachCopyHandlers();
@@ -943,13 +943,13 @@
 
         var isTx = /^0x[a-fA-F0-9]{64}$/.test(value);
         var isIpfs = /^(bafy|bafk|Qm)/i.test(value);
-        var isCid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
+        var isArTxid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
 
         if (isTx) {
           await verifyTx(value.toLowerCase());
         } else if (isIpfs) {
           renderLegacy(value);
-        } else if (isCid) {
+        } else if (isArTxid) {
           renderArweave(value);
         } else {
           consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid Input", "error") + '<div class="data-grid">' + renderDataBlock("Status", "Input not recognized. Enter a 0x... transaction hash or Arweave TXID.") + '</div></div>';
@@ -962,15 +962,15 @@
         if (e.key === "Enter") handleVerify();
       });
 
-      // Check for URL params on load (?cid= kept for backwards compat)
+      // Check for URL params on load
       var urlParams = new URLSearchParams(window.location.search);
       var txParam = urlParams.get("tx");
-      var cidParam = urlParams.get("cid");
+      var txidParam = urlParams.get("txid");
       if (txParam) {
         inputEl.value = txParam;
         handleVerify();
-      } else if (cidParam) {
-        inputEl.value = cidParam;
+      } else if (txidParam) {
+        inputEl.value = txidParam;
         handleVerify();
       }
     </script>
