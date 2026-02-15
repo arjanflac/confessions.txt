@@ -334,6 +334,17 @@
         border: 1px solid;
         border-radius: 999px;
         margin-bottom: 0.95rem;
+        position: relative;
+      }
+
+      .status.has-tip {
+        cursor: help;
+        user-select: none;
+      }
+
+      .status.has-tip:focus-visible {
+        outline: 2px solid var(--text-3);
+        outline-offset: 3px;
       }
 
       .status.verified {
@@ -363,6 +374,53 @@
       .status-icon {
         font-size: 0.9rem;
         line-height: 1;
+      }
+
+      .status-tooltip {
+        position: absolute;
+        left: 0;
+        top: calc(100% + 0.52rem);
+        z-index: 12;
+        min-width: 17rem;
+        max-width: min(34rem, calc(100vw - 2.2rem));
+        padding: 0.66rem 0.82rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: #111114;
+        color: var(--text-2);
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        line-height: 1.5;
+        letter-spacing: normal;
+        text-transform: none;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.36);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(4px);
+        transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease;
+        pointer-events: none;
+      }
+
+      .status-tooltip::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        left: 16px;
+        width: 10px;
+        height: 10px;
+        background: #111114;
+        border-left: 1px solid var(--border);
+        border-top: 1px solid var(--border);
+        transform: rotate(45deg);
+      }
+
+      .status.has-tip:hover .status-tooltip,
+      .status.has-tip:focus .status-tooltip,
+      .status.has-tip:focus-visible .status-tooltip,
+      .status.has-tip.is-open .status-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
       }
 
       /* -- Data grid ---------------------------- */
@@ -610,6 +668,11 @@
         .title {
           font-size: 1.7rem;
         }
+
+        .status-tooltip {
+          min-width: 0;
+          width: min(23rem, calc(100vw - 2rem));
+        }
       }
     </style>
   </head>
@@ -755,14 +818,18 @@
       }
 
       // Render status badge - all content is escaped
-      function renderStatus(text, type) {
+      function renderStatus(text, type, tooltip) {
         const icons = {
           verified: "&#10003;",
           error: "&#10007;",
           warning: "&#9888;",
           loading: "&#8230;"
         };
-        return '<div class="status ' + type + '"><span class="status-icon">' + (icons[type] || icons.loading) + '</span>' + escapeHtml(text) + '</div>';
+        var hasTooltip = Boolean(tooltip);
+        var tooltipHtml = hasTooltip ? '<span class="status-tooltip" role="tooltip">' + escapeHtml(tooltip) + '</span>' : "";
+        var attrs = hasTooltip ? ' tabindex="0" role="button" aria-expanded="false"' : "";
+        var classes = 'status ' + type + (hasTooltip ? " has-tip" : "");
+        return '<div class="' + classes + '"' + attrs + '><span class="status-icon">' + (icons[type] || icons.loading) + '</span>' + escapeHtml(text) + tooltipHtml + '</div>';
       }
 
       // Render data block with optional copy button - all content is escaped
@@ -825,7 +892,8 @@
         var rawMetadata = options.rawMetadata;
         var statusText = txHash ? "Legacy Protocol" : "Legacy Archive";
 
-        var html = '<div class="console-content">' + renderStatus(statusText, "warning") + '<div class="data-grid">';
+        var tooltip = "Legacy IPFS metadata detected. Current labels use ARTXID + CSHA.";
+        var html = '<div class="console-content">' + renderStatus(statusText, "warning", tooltip) + '<div class="data-grid">';
         if (rawMetadata) {
           html += renderDataBlock("Decoded Metadata", rawMetadata, { copyValue: rawMetadata, mono: true });
         }
@@ -839,9 +907,7 @@
         if (checksum) {
           html += renderDataBlock("Proof Hash", checksum, { copyValue: checksum, mono: true });
         }
-        html += '</div>';
-        html += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS metadata detected. Current labels use ARTXID + CSHA.</p></div>';
-        html += '</div>';
+        html += '</div></div>';
         consoleEl.innerHTML = html;
         attachCopyHandlers();
       }
@@ -991,6 +1057,55 @@
             copyToClipboard(text, btn);
           });
         });
+        attachStatusTooltipHandlers();
+      }
+
+      function closeStatusTooltips(exceptEl) {
+        var badges = consoleEl.querySelectorAll(".status.has-tip.is-open");
+        badges.forEach(function(badge) {
+          if (badge !== exceptEl) {
+            badge.classList.remove("is-open");
+            badge.setAttribute("aria-expanded", "false");
+          }
+        });
+      }
+
+      function attachStatusTooltipHandlers() {
+        var badges = consoleEl.querySelectorAll(".status.has-tip");
+        badges.forEach(function(badge) {
+          badge.addEventListener("click", function(event) {
+            event.stopPropagation();
+            var isOpen = badge.classList.contains("is-open");
+            closeStatusTooltips(badge);
+            if (isOpen) {
+              badge.classList.remove("is-open");
+              badge.setAttribute("aria-expanded", "false");
+            } else {
+              badge.classList.add("is-open");
+              badge.setAttribute("aria-expanded", "true");
+            }
+          });
+          badge.addEventListener("keydown", function(event) {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              badge.click();
+            } else if (event.key === "Escape") {
+              badge.classList.remove("is-open");
+              badge.setAttribute("aria-expanded", "false");
+              badge.blur();
+            }
+          });
+          badge.addEventListener("blur", function() {
+            badge.classList.remove("is-open");
+            badge.setAttribute("aria-expanded", "false");
+          });
+        });
+        if (!document.body.dataset.statusTooltipBound) {
+          document.addEventListener("click", function() {
+            closeStatusTooltips(null);
+          });
+          document.body.dataset.statusTooltipBound = "1";
+        }
       }
 
       // Main verify handler
