@@ -290,6 +290,48 @@ def _generate_passphrase() -> str:
     return base64.urlsafe_b64encode(raw).decode("utf-8").rstrip("=")
 
 
+def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
+    single_pass = args.single_pass
+    generated_single = args.gen_single_pass
+    age_pass = args.age_pass
+    stego_pass = args.stego_pass
+    generated_split = args.gen_split_pass
+
+    single_mode_count = int(bool(single_pass)) + int(bool(generated_single))
+    split_manual_any = bool(age_pass) or bool(stego_pass)
+    split_mode_count = int(bool(generated_split)) + int(bool(split_manual_any))
+
+    if single_mode_count > 1:
+        raise RuntimeError("Choose only one single-pass option: --single-pass or --gen-single-pass.")
+
+    if split_mode_count > 1:
+        raise RuntimeError("Choose only one split-pass option: --gen-split-pass or --age-pass + --stego-pass.")
+
+    if single_mode_count and split_mode_count:
+        raise RuntimeError(
+            "Choose either single-pass mode (--single-pass/--gen-single-pass) or split-pass mode (--gen-split-pass or --age-pass + --stego-pass)."
+        )
+
+    if generated_single:
+        generated_pass = _generate_passphrase()
+        return generated_pass, generated_pass, "single-generated"
+
+    if single_pass:
+        return single_pass, single_pass, "single"
+
+    if generated_split:
+        return _generate_passphrase(), _generate_passphrase(), "split-generated"
+
+    if split_manual_any:
+        if not age_pass or not stego_pass:
+            raise RuntimeError("Split mode requires both --age-pass and --stego-pass.")
+        return age_pass, stego_pass, "split"
+
+    raise RuntimeError(
+        "Password options required: use --single-pass, --gen-single-pass, --gen-split-pass, or --age-pass + --stego-pass."
+    )
+
+
 def _run_age_with_passphrase(cmd: list[str], passphrase: str, confirm: bool) -> None:
     if _which("age") is None:
         raise RuntimeError("age CLI not found. Install age first.")
@@ -447,6 +489,12 @@ def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
 
 
 def _seal(args: argparse.Namespace) -> int:
+    try:
+        age_pass, stego_pass, pass_mode = _resolve_seal_passwords(args)
+    except RuntimeError as e:
+        _err(str(e))
+        return 1
+
     cover = Path(args.image).expanduser()
     text_path = Path(args.text).expanduser()
     if not cover.exists():
@@ -468,16 +516,26 @@ def _seal(args: argparse.Namespace) -> int:
     with tarfile.open(payload_tar, "w:gz") as tar:
         tar.add(text_path, arcname="confession.md")
 
-    if args.generate_pass:
-        master_pass = _generate_passphrase()
-        print("Generated master passphrase (print once):")
-        print(master_pass)
+    if pass_mode == "single-generated":
+        print("Password mode: single (--gen-single-pass).")
+        print("Generated passphrase (print once):")
+        print(age_pass)
         print("Store this securely. Optional Shamir splitting: ssss-split -t 2 -n 3")
+    elif pass_mode == "split-generated":
+        print("Password mode: split (--gen-split-pass).")
+        print("Generated AGE passphrase (print once):")
+        print(age_pass)
+        print("Generated STEGO passphrase (print once):")
+        print(stego_pass)
+        print("Store both securely. Share only stego-pass if delegating extraction-only verification.")
+    elif pass_mode == "single":
+        print("Password mode: single (--single-pass).")
     else:
-        master_pass = args.master_pass
+        print("Password mode: split (--age-pass + --stego-pass).")
+        print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
 
     try:
-        _age_encrypt(payload_tar, payload_age, master_pass)
+        _age_encrypt(payload_tar, payload_age, age_pass)
     except RuntimeError as e:
         _err(str(e))
         return 1
@@ -485,7 +543,7 @@ def _seal(args: argparse.Namespace) -> int:
     csha = _sha512_file(payload_age)
 
     try:
-        _hstego_embed(cover, payload_age, output_image, master_pass, args.algo)
+        _hstego_embed(cover, payload_age, output_image, stego_pass, args.algo)
     except RuntimeError as e:
         _err(str(e))
         return 1
@@ -615,7 +673,7 @@ def _extract(args: argparse.Namespace) -> int:
         return 1
 
     output_path = Path(args.out or "payload.age").expanduser()
-    password = args.master_pass or args.stego_pass
+    password = args.single_pass or args.stego_pass
 
     try:
         _hstego_extract(stego_image, output_path, password)
@@ -643,12 +701,13 @@ def _verify(args: argparse.Namespace) -> int:
     print(f"CSHA match: {'YES' if ok else 'NO'}")
 
     if args.decrypt:
-        if not args.master_pass:
-            _err("--master-pass is required to decrypt.")
+        decrypt_pass = args.single_pass or args.age_pass
+        if not decrypt_pass:
+            _err("--decrypt requires --single-pass (single mode) or --age-pass (split mode).")
             return 1
         output_path = Path(args.out or "payload.tar.gz").expanduser()
         try:
-            _age_decrypt(payload_path, output_path, args.master_pass)
+            _age_decrypt(payload_path, output_path, decrypt_pass)
         except RuntimeError as e:
             _err(str(e))
             return 1
@@ -678,13 +737,23 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["auto", "j-uniward", "s-uniward"],
         help="HStego algorithm (auto: JPEG->J-UNIWARD, PNG->S-UNIWARD)",
     )
-    group = seal.add_mutually_exclusive_group(required=True)
-    group.add_argument("--master-pass", help="Master passphrase for age + stego")
-    group.add_argument(
-        "--generate-pass",
-        action="store_true",
-        help="Generate a strong master passphrase",
+    seal.add_argument(
+        "--single-pass",
+        dest="single_pass",
+        help="Single-mode: one passphrase used for both age encryption and stego embedding",
     )
+    seal.add_argument(
+        "--gen-single-pass",
+        action="store_true",
+        help="Single-mode: generate one strong passphrase for both age + stego",
+    )
+    seal.add_argument(
+        "--gen-split-pass",
+        action="store_true",
+        help="Split-mode: generate separate strong passphrases for age encryption and stego embedding",
+    )
+    seal.add_argument("--age-pass", help="Split mode: passphrase for age encryption (requires --stego-pass)")
+    seal.add_argument("--stego-pass", help="Split mode: password for stego embedding (requires --age-pass)")
 
     push = sub.add_parser("push", help="Upload locked artifact to Arweave via ArDrive")
     push.add_argument("--file", required=True, help="Locked artifact jpg")
@@ -701,21 +770,49 @@ def _build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
     extract.add_argument("--out", help="Output payload path (default payload.age)")
     extract_group = extract.add_mutually_exclusive_group(required=True)
-    extract_group.add_argument("--master-pass", help="Master passphrase")
-    extract_group.add_argument("--stego-pass", help="Stego password")
+    extract_group.add_argument("--single-pass", dest="single_pass", help="Single-mode passphrase (same secret used for age + stego)")
+    extract_group.add_argument("--stego-pass", help="Split-mode stego password")
 
     verify = sub.add_parser("verify", help="Verify payload hash and optionally decrypt")
     verify.add_argument("--file", help="payload.age path (default payload.age)")
     verify.add_argument("--csha", required=True, help="Expected CSHA (sha512)")
     verify.add_argument("--decrypt", action="store_true", help="Decrypt payload.age -> payload.tar.gz")
     verify.add_argument("--out", help="Decrypted output path (default payload.tar.gz)")
-    verify.add_argument("--master-pass", help="Master passphrase for decryption")
+    verify_pass_group = verify.add_mutually_exclusive_group(required=False)
+    verify_pass_group.add_argument("--single-pass", dest="single_pass", help="Single-mode passphrase for decryption")
+    verify_pass_group.add_argument("--age-pass", help="Split-mode age passphrase for decryption")
 
     return parser
 
 
+def _subparser_action(parser: argparse.ArgumentParser):
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return action
+    return None
+
+
+def _print_help_all(parser: argparse.ArgumentParser) -> None:
+    print(parser.format_help().rstrip())
+    sub_action = _subparser_action(parser)
+    if sub_action is None:
+        return
+
+    print("\nDetailed subcommand flags:\n")
+    for name in sorted(sub_action.choices.keys()):
+        subparser = sub_action.choices[name]
+        print(subparser.format_help().rstrip())
+        print("")
+
+
 def main() -> int:
     parser = _build_parser()
+    argv = sys.argv[1:]
+
+    if argv and any(token in {"-h", "--help"} for token in argv) and all(token in {"-h", "--help"} for token in argv):
+        _print_help_all(parser)
+        return 0
+
     args = parser.parse_args()
 
     if args.cmd == "doctor":
