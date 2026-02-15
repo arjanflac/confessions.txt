@@ -1,9 +1,9 @@
-# CONFESSIONS.TXT
-**Proof of Omertà (R&D)**
+# CONFESSIONS.txt \ Proof of Omertà
+*Research & Development*
 
-Local-first toolchain for producing **permanently stored** and **cryptographically sealed** testimony artifacts.
+Local-first CLI for producing **permanently stored** and **cryptographically sealed** testimony artifacts.
 
-It seals a plaintext testimony file with `age` into `payload.age`, embeds that encrypted payload into a carrier image using **HStego** (adaptive JPEG/bitmap steganography), uploads the locked artifact to **Arweave** (content-addressed, immutable storage), and optionally generates **Base** transaction calldata so the artifact can be publicly *referenced* and its integrity *verified* via an on-chain metadata trail.
+The protocol seals a plaintext testimony file with `age` into `payload.age`, embeds that encrypted payload into a carrier image using **HStego** (adaptive JPEG/bitmap steganography), uploads the locked artifact to **Arweave** (content-addressed, immutable storage), and optionally generates **Base** transaction calldata so the artifact can be publicly *referenced* and its integrity *verified* via an on-chain metadata trail.
 
 Website verifier: **https://confessionstxt.art/verify**
 
@@ -21,14 +21,14 @@ A **locked artifact**:
 
 ---
 
-## Protocol overview (v2)
+## Protocol overview
 
 1. **Record**: write testimony as plaintext (`confession.md` / `.txt`)
 2. **Pack**: package into an archive boundary (`payload.tar.gz`)
 3. **Seal**: encrypt with `age` → `payload.age`
 4. **Conceal**: embed `payload.age` into a cover image using HStego → `locked_artifact.jpg`
 5. **Archive**: upload `locked_artifact.jpg` to Arweave via ArDrive CLI → Arweave CID/TXID
-6. **Broadcast (optional)**: generate Base calldata containing versioned metadata (CID + CSHA).  
+6. **Broadcast (optional)**: generate Base calldata containing a catalog-style metadata label (`TITLE | ARTXID | CSHA`).  
    User signs/broadcasts manually (wallet custody remains with the operator).
 
 **Canonical integrity proof:**
@@ -36,7 +36,7 @@ A **locked artifact**:
 
 ---
 
-## Password modes (feature)
+## Password modes
 
 `seal` supports two security modes:
 
@@ -55,9 +55,10 @@ Flag convention:
   Do not mix single-mode flags with split-mode flags.
 - Generation method: Python `secrets.token_bytes(32)` (CSPRNG), encoded as URL-safe Base64 without `=` padding.
 
-Why split mode matters:
-- You can share only `--stego-pass` so a verifier can extract `payload.age` and confirm `CSHA`.
-- That verifier still cannot decrypt plaintext without `--age-pass`.
+Psychological framing:
+- **Single-pass mode** feels covert: one secret controls both extraction and decryption, so disclosure remains all-or-nothing.
+- **Split-pass mode** feels assertive: you can reveal `--stego-pass` to prove a sealed payload exists and matches `CSHA`, while still withholding plaintext behind `--age-pass`.
+- Optional power move: publish `STEG` in on-chain metadata so third parties can independently extract and hash-check without asking you for extraction access.
 
 ---
 
@@ -74,7 +75,7 @@ Why split mode matters:
 - **Trustless broadcasting:** the CLI never asks for EVM private keys. It only prints calldata;
   you broadcast it manually using Phantom/MetaMask.
 - **Defense in depth:** even if embedding is detected, `payload.age` remains unreadable without the key.
-- **Public verifiability (optional):** Base metadata can publish `AR` + `CSHA` so anyone can confirm
+- **Public verifiability (optional):** Base metadata can publish `ARTXID` + `CSHA` so anyone can confirm
   the Arweave artifact matches the sealed payload hash.
 
 No stego method is guaranteed undetectable; embedding is **payload-rate constrained** to reduce
@@ -101,8 +102,7 @@ steganalysis reliability.
 xcode-select --install
 brew install python@3.12 age jpeg
 
-$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv
-source .venv/bin/activate
+$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv && source .venv/bin/activate
 python -m pip install --upgrade pip
 
 python -m pip install imageio numpy scipy pycryptodome numba Pillow
@@ -116,8 +116,7 @@ npm install -g ardrive-cli
 sudo apt-get update
 sudo apt-get install -y age python3-pip build-essential libjpeg-dev python3-tk
 
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 python -m pip install --upgrade pip
 
 python -m pip install imageio numpy scipy pycryptodome numba Pillow
@@ -183,16 +182,26 @@ python3 cli/confess.py mint --title "Proof of Omertà" --txid <ARWEAVE_TXID> --c
 ```
 This prints a hex string for transaction input data.
 
+Optional public extraction key broadcast:
+```bash
+python3 cli/confess.py mint --title "Proof of Omertà" --txid <ARWEAVE_TXID> --csha <CSHA_SHA512> --steg "<STEGO_PASS>"
+```
+Use only if you intentionally want extraction access to be public on-chain.
+
 You broadcast manually:
 - Network: Base
 - Send: 0 ETH
 - To: null address or self
 - Data: paste the hex calldata
 
-**V2 metadata format (example):**
+**Metadata label format (example):**
 ```
-V:2|TITLE:Proof of Omertà|AR:<CID>|CSHA:<SHA512>|ALG:SHA512|FILE:payload.age|NOTE:R&D
+Proof of Omertà | ARTXID:<TXID> | CSHA:<SHA512>
+Proof of Omertà | ARTXID:<TXID> | CSHA:<SHA512> | STEG:<STEGO_PASS>
 ```
+
+Why `|` delimiters:
+- This keeps the label human-readable (like catalog metadata) and machine-parsable with stable field boundaries.
 
 ---
 
@@ -205,7 +214,7 @@ V:2|TITLE:Proof of Omertà|AR:<CID>|CSHA:<SHA512>|ALG:SHA512|FILE:payload.age|NO
   Password options: `--single-pass` / `--gen-single-pass` (single mode), or
   `--age-pass` + `--stego-pass` / `--gen-split-pass` (split mode)
 - `push` — upload locked artifact through ArDrive
-- `mint` — generate Base calldata (manual broadcast)
+- `mint` — generate Base calldata (manual broadcast). Optional: `--steg` to publish stego extraction password
 - `extract` — recover `payload.age` from a locked artifact (requires `--single-pass` or `--stego-pass`)
 - `verify` — check `sha512(payload.age)` vs expected `CSHA`; optional decrypt path with `--single-pass` or `--age-pass`
 
@@ -215,7 +224,7 @@ V:2|TITLE:Proof of Omertà|AR:<CID>|CSHA:<SHA512>|ALG:SHA512|FILE:payload.age|NO
 
 Public readout (metadata + instructions):
 - **https://confessionstxt.art/verify**
-  - Base tx hash: resolves protocol metadata (`AR`, `CSHA`, etc.)
+  - Base tx hash: resolves protocol metadata (`ARTXID`, `CSHA`, optional `STEG`)
   - Arweave CID/TXID: resolves archive location + local verification steps
 
 Local verification (operator):

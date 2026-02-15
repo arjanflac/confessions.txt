@@ -677,14 +677,27 @@
         return text;
       }
 
-      // Utility: parse V:2 metadata format
+      // Utility: parse metadata label format:
+      // "<TITLE> | ARTXID:<TXID> | CSHA:<SHA512> | STEG:<OPTIONAL>"
       function parseMetadata(text) {
         const fields = {};
         const parts = text.split("|");
-        for (const part of parts) {
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          const trimmed = part.trim();
+          if (!trimmed) continue;
+          if (i === 0 && !fields.TITLE) {
+            // First segment is always the title in the current label format.
+            if (trimmed.toUpperCase().startsWith("TITLE:")) {
+              fields.TITLE = trimmed.slice(trimmed.indexOf(":") + 1).trim();
+            } else {
+              fields.TITLE = trimmed;
+            }
+            continue;
+          }
           const idx = part.indexOf(":");
           if (idx === -1) continue;
-          const key = part.slice(0, idx).trim();
+          const key = part.slice(0, idx).trim().toUpperCase();
           const value = part.slice(idx + 1).trim();
           if (key) fields[key] = value;
         }
@@ -799,7 +812,7 @@
       function renderLegacy(cid) {
         var safeCid = safeId(cid);
         var ipfsUrl = "https://ipfs.io/ipfs/" + safeCid;
-        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. V:2 metadata with Arweave is recommended for permanence guarantees.</p></div></div>';
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. Current Arweave labels use ARTXID + CSHA.</p></div></div>';
         attachCopyHandlers();
       }
 
@@ -835,10 +848,10 @@
           }
 
           var fields = parseMetadata(ascii);
-          var hasAr = fields.AR || fields.IPFS || fields.CID;
+          var hasAr = fields.ARTXID || fields.AR || fields.IPFS || fields.CID;
 
           if (!Object.keys(fields).length || !hasAr) {
-            // Try to detect legacy V1 format: "cid: <value> proof: <value>"
+            // Try to detect older format: "cid: <value> proof: <value>"
             var legacyCidMatch = ascii.match(/cid:\s*([a-zA-Z0-9_-]+)/i);
             var legacyProofMatch = ascii.match(/proof:\s*([a-fA-F0-9]+)/i);
 
@@ -848,14 +861,14 @@
               var ipfsUrl = "https://ipfs.io/ipfs/" + safeId(legacyCid);
 
               // Note: all dynamic values are escaped via escapeHtml()/safeId() inside renderDataBlock/renderStatus
-              var legacyHtml = '<div class="console-content">' + renderStatus("Legacy Protocol (V1)", "warning") + '<div class="data-grid">';
+              var legacyHtml = '<div class="console-content">' + renderStatus("Legacy Protocol", "warning") + '<div class="data-grid">';
               legacyHtml += renderDataBlock("IPFS CID", legacyCid, { copyValue: legacyCid, mono: true });
               legacyHtml += renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true });
               if (legacyProof) {
                 legacyHtml += renderDataBlock("Proof Hash", legacyProof, { copyValue: legacyProof, mono: true });
               }
               legacyHtml += '</div>';
-              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an earlier version of the protocol (IPFS-based). The current protocol (V:2) uses Arweave for permanence.</p></div>';
+              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an older IPFS-based format. Current Arweave labels use ARTXID + CSHA.</p></div>';
               legacyHtml += '</div>';
               consoleEl.innerHTML = legacyHtml;
               attachCopyHandlers();
@@ -873,8 +886,9 @@
             return;
           }
 
-          // V:2 format with Arweave
-          var arId = safeId(fields.AR);
+          // Arweave label format
+          var arField = fields.ARTXID || fields.AR;
+          var arId = safeId(arField);
           var arweaveUrl = "https://arweave.net/" + arId;
 
           var steps = [
@@ -883,26 +897,23 @@
             "Compute sha512(payload.age) and compare to CSHA",
             "Optional: decrypt payload.age locally with age"
           ];
-          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\nhstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum\nsha512sum payload.age\n# Expected: " + (fields.CSHA || "[CSHA value]") + "  payload.age";
+          var extractCommand = fields.STEG
+            ? 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "' + fields.STEG + '"'
+            : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
+          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + (fields.CSHA || "<CSHA_SHA512>");
 
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified") + '<div class="data-grid">';
 
           if (fields.TITLE) {
             html += renderDataBlock("Title", fields.TITLE);
           }
-          if (fields.V) {
-            html += renderDataBlock("Version", "V:" + fields.V, { mono: true });
-          }
-          html += renderDataBlock("Arweave TXID", fields.AR, { copyValue: fields.AR, mono: true });
+          html += renderDataBlock("Arweave TXID", arField, { copyValue: arField, mono: true });
           html += renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true });
           if (fields.CSHA) {
-            html += renderDataBlock("CSHA", fields.CSHA + " (" + (fields.ALG || "SHA512") + ")", { copyValue: fields.CSHA, mono: true });
+            html += renderDataBlock("CSHA", fields.CSHA + " (SHA512)", { copyValue: fields.CSHA, mono: true });
           }
-          if (fields.FILE) {
-            html += renderDataBlock("File", fields.FILE);
-          }
-          if (fields.NOTE) {
-            html += renderDataBlock("Note", fields.NOTE);
+          if (fields.STEG) {
+            html += renderDataBlock("STEG (Public)", fields.STEG, { copyValue: fields.STEG, mono: true });
           }
 
           html += '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';

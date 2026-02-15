@@ -105,8 +105,8 @@ def _format_ar_from_winston(winston: int) -> str:
 
 
 def _print_install_hints() -> None:
-    print("Install hints:")
-    print("  macOS (recommended):")
+    print("Quick setup:")
+    print("  macOS:")
     print("    xcode-select --install")
     print("    brew install python@3.12 age jpeg")
     print("    $(brew --prefix python@3.12)/bin/python3.12 -m venv .venv && source .venv/bin/activate")
@@ -187,17 +187,23 @@ def _xcode_clt_status() -> Tuple[bool, Optional[str]]:
 
 
 def _doctor() -> int:
+    warnings: list[str] = []
+
     print("confess doctor")
+    print("--------------")
     print(f"Python: {sys.version.split()[0]}")
     if sys.version_info < (3, 9):
-        _err("  ! Python 3.9+ recommended")
-    if sys.version_info >= (3, 13):
-        _err("  ! Python 3.11/3.12 recommended; 3.13+ can break HStego dependencies.")
+        warnings.append("Python 3.9+ is required.")
+    elif sys.version_info >= (3, 13):
+        warnings.append("Python 3.11/3.12 is recommended; 3.13+ can break HStego dependencies.")
 
     venv_ok = _in_venv()
-    print(f"venv: {'OK' if venv_ok else 'NO'}")
+    print(f"virtualenv: {'OK' if venv_ok else 'MISSING'}")
     if not venv_ok:
-        _err("  ! Not in a virtual environment. On macOS, pip installs may fail (PEP 668).")
+        warnings.append(
+            "Not inside a virtual environment. Create one with: "
+            "$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv && source .venv/bin/activate"
+        )
 
     arch = platform.machine()
     print(f"arch: {arch}")
@@ -205,9 +211,13 @@ def _doctor() -> int:
     age_path = _which("age")
     age_version = _binary_version(["age", "--version"]) if age_path else None
     print(f"age: {'OK' if age_path else 'MISSING'}" + (f" ({age_version})" if age_version else ""))
+    if not age_path:
+        warnings.append("age CLI missing.")
 
     hstego_ok, hstego_info = _check_hstego()
     print(f"hstego (hstegolib): {'OK' if hstego_ok else 'MISSING'}" + (f" ({hstego_info})" if hstego_info else ""))
+    if not hstego_ok:
+        warnings.append("HStego missing or not importable.")
 
     ardrive_path = _which("ardrive")
     ardrive_version = _binary_version(["ardrive", "--version"]) if ardrive_path else None
@@ -215,6 +225,8 @@ def _doctor() -> int:
         f"ardrive: {'OK' if ardrive_path else 'MISSING'}"
         + (f" ({ardrive_version})" if ardrive_version else "")
     )
+    if not ardrive_path:
+        warnings.append("ArDrive CLI missing.")
 
     if platform.system() == "Darwin":
         clt_ok, clt_info = _xcode_clt_status()
@@ -223,18 +235,29 @@ def _doctor() -> int:
             + (f" ({clt_info})" if clt_info else "")
         )
         if not clt_ok:
-            _err("  ! Install Xcode Command Line Tools: xcode-select --install")
+            warnings.append("Install Xcode Command Line Tools: xcode-select --install")
         if arch == "arm64":
-            _err("  ! Apple Silicon detected. Use scripts/install_hstego_mac.sh (it patches SSE intrinsics via sse2neon).")
+            warnings.append(
+                "Apple Silicon detected. Use scripts/install_hstego_mac.sh (patches SSE intrinsics via sse2neon)."
+            )
         if _which("python3.12") is None:
-            _err("  ! python3.12 not on PATH. Use: $(brew --prefix python@3.12)/bin/python3.12")
+            warnings.append("python3.12 not on PATH. Use: $(brew --prefix python@3.12)/bin/python3.12")
         jpeg_header = _find_jpeglib_header()
         print(
             f"libjpeg headers: {'OK' if jpeg_header else 'MISSING'}"
             + (f" ({jpeg_header})" if jpeg_header else "")
         )
         if not jpeg_header:
-            _err("  ! Install libjpeg headers: brew install jpeg")
+            warnings.append("Install libjpeg headers: brew install jpeg")
+
+    print("")
+    if warnings:
+        print("Action items:")
+        for item in warnings:
+            print(f"  - {item}")
+    else:
+        print("Action items:")
+        print("  - None. Environment looks ready.")
 
     print("")
     _print_install_hints()
@@ -647,11 +670,18 @@ def _mint(args: argparse.Namespace) -> int:
         _err("Title cannot include '|' or newlines.")
         return 1
 
-    file_name = args.file or "payload.age"
+    if "|" in args.txid or "\n" in args.txid:
+        _err("TXID cannot include '|' or newlines.")
+        return 1
 
-    metadata = (
-        f"V:2|TITLE:{title}|AR:{args.txid}|CSHA:{args.csha}|ALG:SHA512|FILE:{file_name}|NOTE:R&D"
-    )
+    if args.steg and ("|" in args.steg or "\n" in args.steg):
+        _err("STEG cannot include '|' or newlines.")
+        return 1
+
+    metadata_parts = [title, f"ARTXID:{args.txid}", f"CSHA:{args.csha}"]
+    if args.steg:
+        metadata_parts.append(f"STEG:{args.steg}")
+    metadata = " | ".join(metadata_parts)
     data_hex = "0x" + metadata.encode("utf-8").hex()
 
     print("Metadata string:")
@@ -663,6 +693,9 @@ def _mint(args: argparse.Namespace) -> int:
     print("  Send: 0 ETH")
     print("  To: null address (0x0000000000000000000000000000000000000000) or self")
     print("  Data field: paste 0x... above")
+    if args.steg:
+        print("\nNote:")
+        print("  STEG is public on-chain when included. Anyone can extract payload.age from the locked artifact.")
     return 0
 
 
@@ -764,7 +797,7 @@ def _build_parser() -> argparse.ArgumentParser:
     mint.add_argument("--txid", required=True, help="Arweave TXID")
     mint.add_argument("--csha", required=True, help="CSHA (sha512 of payload.age)")
     mint.add_argument("--title", required=True, help="Title")
-    mint.add_argument("--file", help="Payload filename (default payload.age)")
+    mint.add_argument("--steg", help="Optional: publish stego pass as STEG:<value> in metadata")
 
     extract = sub.add_parser("extract", help="Extract payload.age from a locked artifact")
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
