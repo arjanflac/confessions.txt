@@ -682,18 +682,26 @@
       function parseMetadata(text) {
         const fields = {};
         const parts = text.split("|");
+        const hasPipeDelimitedLabel = parts.length > 1;
         for (let i = 0; i < parts.length; i++) {
           const part = parts[i];
           const trimmed = part.trim();
           if (!trimmed) continue;
           if (i === 0 && !fields.TITLE) {
-            // First segment is always the title in the current label format.
-            if (trimmed.toUpperCase().startsWith("TITLE:")) {
-              fields.TITLE = trimmed.slice(trimmed.indexOf(":") + 1).trim();
-            } else {
-              fields.TITLE = trimmed;
+            // Title can be plain text or explicit TITLE:<value>.
+            const looksLikeExplicitTitle = trimmed.toUpperCase().startsWith("TITLE:");
+            const firstColon = trimmed.indexOf(":");
+            const firstKey = firstColon === -1 ? "" : trimmed.slice(0, firstColon).trim().toUpperCase();
+            const looksLikeKnownField = ["ARTXID", "AR", "CSHA", "STEG", "CID", "IPFS", "PROOF", "SHA", "HASH"].indexOf(firstKey) !== -1;
+            const looksLikeFreeTitle = trimmed.indexOf(":") === -1;
+            if ((hasPipeDelimitedLabel && !looksLikeKnownField) || looksLikeExplicitTitle || looksLikeFreeTitle) {
+              if (looksLikeExplicitTitle) {
+                fields.TITLE = trimmed.slice(trimmed.indexOf(":") + 1).trim();
+              } else {
+                fields.TITLE = trimmed;
+              }
+              continue;
             }
-            continue;
           }
           const idx = part.indexOf(":");
           if (idx === -1) continue;
@@ -809,11 +817,69 @@
       }
 
       // Handle legacy IPFS
-      function renderLegacy(cid) {
+      function renderLegacy(cid, options) {
+        options = options || {};
         var safeCid = safeId(cid);
         var ipfsUrl = "https://ipfs.io/ipfs/" + safeCid;
-        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Legacy Archive", "warning") + '<div class="data-grid">' + renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true }) + renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true }) + '</div><div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS payload detected. Current labels use ARTXID + CSHA.</p></div></div>';
+        var title = options.title;
+        var checksum = options.checksum;
+        var txHash = options.txHash;
+        var statusText = txHash ? "Legacy Protocol" : "Legacy Archive";
+
+        var html = '<div class="console-content">' + renderStatus(statusText, "warning") + '<div class="data-grid">';
+        if (title) {
+          html += renderDataBlock("Title", title);
+        }
+        if (txHash) {
+          html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
+        }
+        html += renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true });
+        html += renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true });
+        if (checksum) {
+          html += renderDataBlock("Proof Hash", checksum, { copyValue: checksum, mono: true });
+        }
+        html += '</div>';
+        html += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">Legacy IPFS metadata detected. Current labels use ARTXID + CSHA.</p></div>';
+        html += '</div>';
+        consoleEl.innerHTML = html;
         attachCopyHandlers();
+      }
+
+      function parseLegacyMetadata(text, parsedFields) {
+        parsedFields = parsedFields || {};
+        var normalized = String(text || "").replace(/\u0000/g, " ");
+        var seededTitle = parsedFields.TITLE || null;
+        if (seededTitle && /\b(?:cid|ipfs|proof|sha|hash|csha)\s*:/i.test(seededTitle)) {
+          seededTitle = null;
+        }
+        var legacy = {
+          title: seededTitle,
+          cid: parsedFields.IPFS || parsedFields.CID || null,
+          checksum: parsedFields.CSHA || parsedFields.PROOF || parsedFields.SHA || parsedFields.HASH || null
+        };
+        if (legacy.cid && /\s+\b(?:title|ipfs|cid|csha|proof|sha512|sha|hash)\s*:/i.test(legacy.cid)) {
+          legacy.cid = null;
+        }
+        if (legacy.checksum && /\s+\b(?:title|ipfs|cid|csha|proof|sha512|sha|hash)\s*:/i.test(legacy.checksum)) {
+          legacy.checksum = null;
+        }
+
+        var cidMatch = normalized.match(/\b(?:ipfs|cid)\s*:\s*([a-zA-Z0-9_-]+)/i);
+        if (!legacy.cid && cidMatch) {
+          legacy.cid = cidMatch[1];
+        }
+
+        var checksumMatch = normalized.match(/\b(?:csha|proof|sha512|sha|hash)\s*:\s*((?:0x)?[a-fA-F0-9]{32,128})/i);
+        if (!legacy.checksum && checksumMatch) {
+          legacy.checksum = checksumMatch[1];
+        }
+
+        var titleMatch = normalized.match(/\btitle\s*:\s*(.+?)(?=\s+\b(?:ipfs|cid|csha|proof|sha512|sha|hash)\s*:|$)/i);
+        if (!legacy.title && titleMatch) {
+          legacy.title = titleMatch[1].trim();
+        }
+
+        return legacy;
       }
 
       // Handle Base transaction
@@ -848,46 +914,24 @@
           }
 
           var fields = parseMetadata(ascii);
-          var hasAr = fields.ARTXID || fields.AR || fields.IPFS || fields.CID;
+          var arField = fields.ARTXID || fields.AR;
+          var legacy = parseLegacyMetadata(ascii, fields);
 
-          if (!Object.keys(fields).length || !hasAr) {
-            // Try to detect older format: "cid: <value> proof: <value>"
-            var legacyCidMatch = ascii.match(/cid:\s*([a-zA-Z0-9_-]+)/i);
-            var legacyProofMatch = ascii.match(/proof:\s*([a-fA-F0-9]+)/i);
+          if (!arField && legacy.cid) {
+            renderLegacy(legacy.cid, {
+              title: legacy.title,
+              checksum: legacy.checksum,
+              txHash: txHash
+            });
+            return;
+          }
 
-            if (legacyCidMatch) {
-              var legacyCid = legacyCidMatch[1];
-              var legacyProof = legacyProofMatch ? legacyProofMatch[1] : null;
-              var ipfsUrl = "https://ipfs.io/ipfs/" + safeId(legacyCid);
-
-              // Note: all dynamic values are escaped via escapeHtml()/safeId() inside renderDataBlock/renderStatus
-              var legacyHtml = '<div class="console-content">' + renderStatus("Legacy Protocol", "warning") + '<div class="data-grid">';
-              legacyHtml += renderDataBlock("IPFS CID", legacyCid, { copyValue: legacyCid, mono: true });
-              legacyHtml += renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true });
-              if (legacyProof) {
-                legacyHtml += renderDataBlock("Proof Hash", legacyProof, { copyValue: legacyProof, mono: true });
-              }
-              legacyHtml += '</div>';
-              legacyHtml += '<div class="notes" style="margin-top: var(--space-md);"><p class="notes-text">This artifact uses an older IPFS-based format. Current labels use ARTXID + CSHA.</p></div>';
-              legacyHtml += '</div>';
-              consoleEl.innerHTML = legacyHtml;
-              attachCopyHandlers();
-              return;
-            }
-
+          if (!arField) {
             consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Unparsed", "warning") + '<div class="data-grid">' + renderDataBlock("Raw Data", ascii, { mono: true }) + '</div></div>';
             return;
           }
 
-          // Legacy IPFS format
-          if (!fields.AR && (fields.IPFS || fields.CID)) {
-            var cid = fields.IPFS || fields.CID;
-            renderLegacy(cid);
-            return;
-          }
-
           // Arweave label format
-          var arField = fields.ARTXID || fields.AR;
           var arId = safeId(arField);
           var arweaveUrl = "https://arweave.net/" + arId;
 
