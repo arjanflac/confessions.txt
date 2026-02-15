@@ -55,10 +55,10 @@ Flag convention:
   Do not mix single-mode flags with split-mode flags.
 - Generation method: Python `secrets.token_bytes(32)` (CSPRNG), encoded as URL-safe Base64 without `=` padding.
 
-Psychological framing:
-- **Single-pass mode** feels covert: one secret controls both extraction and decryption, so disclosure remains all-or-nothing.
-- **Split-pass mode** feels assertive: you can reveal `--stego-pass` to prove a sealed payload exists and matches `CSHA`, while still withholding plaintext behind `--age-pass`.
-- Optional power move: publish `STEG` in on-chain metadata so third parties can independently extract and hash-check without asking you for extraction access.
+Curatorial framing:
+- **Single-pass mode** preserves total custody: extraction and decryption remain bound to one key, so disclosure is all-or-nothing.
+- **Split-pass mode** separates proof from revelation: release `--stego-pass` to allow extraction and `CSHA` verification, while plaintext remains sealed behind `--age-pass`.
+- Optional public-proof posture: publish `STEG` in on-chain metadata so third parties can independently extract and hash-check without requesting extraction access.
 
 ---
 
