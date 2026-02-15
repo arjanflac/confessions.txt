@@ -819,14 +819,16 @@
       // Handle legacy IPFS
       function renderLegacy(cid, options) {
         options = options || {};
-        var safeCid = safeId(cid);
-        var ipfsUrl = "https://ipfs.io/ipfs/" + safeCid;
         var title = options.title;
         var checksum = options.checksum;
         var txHash = options.txHash;
+        var rawMetadata = options.rawMetadata;
         var statusText = txHash ? "Legacy Protocol" : "Legacy Archive";
 
         var html = '<div class="console-content">' + renderStatus(statusText, "warning") + '<div class="data-grid">';
+        if (rawMetadata) {
+          html += renderDataBlock("Decoded Metadata", rawMetadata, { copyValue: rawMetadata, mono: true });
+        }
         if (title) {
           html += renderDataBlock("Title", title);
         }
@@ -834,7 +836,6 @@
           html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
         }
         html += renderDataBlock("IPFS CID", cid, { copyValue: cid, mono: true });
-        html += renderDataBlock("IPFS Gateway", ipfsUrl, { copyValue: ipfsUrl, isLink: true });
         if (checksum) {
           html += renderDataBlock("Proof Hash", checksum, { copyValue: checksum, mono: true });
         }
@@ -848,6 +849,7 @@
       function parseLegacyMetadata(text, parsedFields) {
         parsedFields = parsedFields || {};
         var normalized = String(text || "").replace(/\u0000/g, " ");
+        var compact = normalized.replace(/\s+/g, " ").trim();
         var seededTitle = parsedFields.TITLE || null;
         if (seededTitle && /\b(?:cid|ipfs|proof|sha|hash|csha)\s*:/i.test(seededTitle)) {
           seededTitle = null;
@@ -878,6 +880,15 @@
         if (!legacy.title && titleMatch) {
           legacy.title = titleMatch[1].trim();
         }
+        if (!legacy.title) {
+          var firstField = compact.match(/\b(?:artxid|ar|ipfs|cid|csha|proof|sha512|sha|hash|steg)\s*:/i);
+          if (firstField && typeof firstField.index === "number" && firstField.index > 0) {
+            var prefix = compact.slice(0, firstField.index).replace(/[|,;:\-]+$/g, "").trim();
+            if (prefix) {
+              legacy.title = prefix;
+            }
+          }
+        }
 
         return legacy;
       }
@@ -907,6 +918,7 @@
 
           var inputHex = data.result.input;
           var ascii = hexToAscii(inputHex);
+          var rawMetadata = String(ascii || "").replace(/\u0000/g, " ").trim();
 
           if (!ascii) {
             consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid", "error") + '<div class="data-grid">' + renderDataBlock("Status", "No readable metadata found in transaction input") + '</div></div>';
@@ -921,7 +933,8 @@
             renderLegacy(legacy.cid, {
               title: legacy.title,
               checksum: legacy.checksum,
-              txHash: txHash
+              txHash: txHash,
+              rawMetadata: rawMetadata
             });
             return;
           }
