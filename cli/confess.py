@@ -56,6 +56,10 @@ def _save_wallet_path(wallet_path: Path) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     data = {"wallet_path": str(wallet_path)}
     CONFIG_PATH.write_text(json.dumps(data, indent=2))
+    try:
+        os.chmod(CONFIG_PATH, 0o600)
+    except OSError:
+        pass
 
 
 def _sha512_file(path: Path) -> str:
@@ -313,6 +317,27 @@ def _generate_passphrase() -> str:
     return base64.urlsafe_b64encode(raw).decode("utf-8").rstrip("=")
 
 
+def _sanitize_age_output(output: str, passphrase: str) -> str:
+    if not output:
+        return ""
+    safe = output.replace(passphrase, "[REDACTED]")
+    safe = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", safe)
+    safe = safe.replace("\r", "")
+    lines = [line for line in safe.splitlines() if line.strip()]
+    if not lines:
+        return ""
+    return "\n".join(lines[-4:])
+
+
+def _looks_like_age_ciphertext(path: Path) -> bool:
+    try:
+        with path.open("rb") as f:
+            head = f.read(32)
+    except OSError:
+        return False
+    return head.startswith(b"age-encryption.org/v1")
+
+
 def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
     single_pass = args.single_pass
     generated_single = args.gen_single_pass
@@ -383,20 +408,27 @@ def _run_age_with_passphrase(cmd: list[str], passphrase: str, confirm: bool) -> 
             pass
 
         output_chunks: list[bytes] = []
-        while True:
-            try:
-                chunk = os.read(fd, 1024)
-                if not chunk:
+        try:
+            while True:
+                try:
+                    chunk = os.read(fd, 1024)
+                    if not chunk:
+                        break
+                    output_chunks.append(chunk)
+                except OSError:
                     break
-                output_chunks.append(chunk)
+        finally:
+            try:
+                os.close(fd)
             except OSError:
-                break
+                pass
 
         _, status = os.waitpid(pid, 0)
         exit_code = os.waitstatus_to_exitcode(status)
         output = b"".join(output_chunks).decode("utf-8", errors="ignore").strip()
         if exit_code != 0:
-            raise RuntimeError(f"age failed: {output or 'unknown error'}")
+            sanitized = _sanitize_age_output(output, passphrase)
+            raise RuntimeError("age failed." + (f" {sanitized}" if sanitized else ""))
 
 
 def _age_encrypt(input_path: Path, output_path: Path, passphrase: str) -> None:
@@ -509,6 +541,10 @@ def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
 
     if not output.exists():
         raise RuntimeError("HStego extract failed: payload not recovered.")
+    if output.stat().st_size == 0:
+        raise RuntimeError("HStego extract failed: recovered payload is empty.")
+    if not _looks_like_age_ciphertext(output):
+        raise RuntimeError("HStego extract failed: recovered payload is not a valid age ciphertext.")
 
 
 def _seal(args: argparse.Namespace) -> int:
@@ -541,14 +577,14 @@ def _seal(args: argparse.Namespace) -> int:
 
     if pass_mode == "single-generated":
         print("Password mode: single (--gen-single-pass).")
-        print("Generated passphrase (print once):")
+        print("Generated passphrase:")
         print(age_pass)
         print("Store this securely. Optional Shamir splitting: ssss-split -t 2 -n 3")
     elif pass_mode == "split-generated":
         print("Password mode: split (--gen-split-pass).")
-        print("Generated AGE passphrase (print once):")
+        print("Generated AGE passphrase:")
         print(age_pass)
-        print("Generated STEGO passphrase (print once):")
+        print("Generated STEGO passphrase:")
         print(stego_pass)
         print("Store both securely. Share only stego-pass if delegating extraction-only verification.")
     elif pass_mode == "single":
@@ -562,6 +598,12 @@ def _seal(args: argparse.Namespace) -> int:
     except RuntimeError as e:
         _err(str(e))
         return 1
+    finally:
+        if payload_tar.exists():
+            try:
+                payload_tar.unlink()
+            except OSError:
+                pass
 
     csha = _sha512_file(payload_age)
 
@@ -640,7 +682,10 @@ def _push(args: argparse.Namespace) -> int:
 
     folder_id = args.folder_id or os.environ.get("ARDRIVE_PARENT_FOLDER_ID") or os.environ.get("ARDRIVE_FOLDER_ID")
     if not folder_id:
-        _err("ArDrive parent folder id is required. Create a drive/folder with ArDrive CLI and pass --folder-id.")
+        _err(
+            "ArDrive parent folder id is required. Use the `entityId` from the `created` item where "
+            "`type` is `folder` in `ardrive create-drive` output, then pass it via --folder-id."
+        )
         _err("See ardrive-cli-README.md for the create-drive and upload-file examples.")
         return 1
 
@@ -707,6 +752,12 @@ def _extract(args: argparse.Namespace) -> int:
 
     output_path = Path(args.out or "payload.age").expanduser()
     password = args.single_pass or args.stego_pass
+    if output_path.exists():
+        try:
+            output_path.unlink()
+        except OSError as e:
+            _err(f"Cannot overwrite output path {output_path}: {e}")
+            return 1
 
     try:
         _hstego_extract(stego_image, output_path, password)
@@ -726,6 +777,9 @@ def _verify(args: argparse.Namespace) -> int:
 
     actual = _sha512_file(payload_path)
     expected = args.csha.lower()
+    if not re.fullmatch(r"[0-9a-f]{128}", expected):
+        _err("--csha must be a 128-character hex sha512 value.")
+        return 1
 
     print(f"Expected CSHA: {expected}")
     print(f"Actual CSHA:   {actual}")
@@ -734,6 +788,9 @@ def _verify(args: argparse.Namespace) -> int:
     print(f"CSHA match: {'YES' if ok else 'NO'}")
 
     if args.decrypt:
+        if not ok:
+            _err("Refusing to decrypt because CSHA does not match.")
+            return 1
         decrypt_pass = args.single_pass or args.age_pass
         if not decrypt_pass:
             _err("--decrypt requires --single-pass (single mode) or --age-pass (split mode).")
@@ -742,6 +799,11 @@ def _verify(args: argparse.Namespace) -> int:
         try:
             _age_decrypt(payload_path, output_path, decrypt_pass)
         except RuntimeError as e:
+            if output_path.exists():
+                try:
+                    output_path.unlink()
+                except OSError:
+                    pass
             _err(str(e))
             return 1
         print(f"Decrypted to: {output_path}")
@@ -790,7 +852,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     push = sub.add_parser("push", help="Upload locked artifact to Arweave via ArDrive")
     push.add_argument("--file", required=True, help="Locked artifact jpg")
-    push.add_argument("--folder-id", help="ArDrive parent folder id")
+    push.add_argument(
+        "--folder-id",
+        help="ArDrive parent folder id (the folder `entityId` from `ardrive create-drive` output)",
+    )
     push.add_argument("--dest-name", help="Optional destination filename on ArDrive")
 
     mint = sub.add_parser("mint", help="Generate Base tx input metadata")

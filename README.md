@@ -166,11 +166,24 @@ python3 cli/confess.py seal --image cover.jpg --text confession.md --gen-split-p
 ```bash
 ardrive create-drive --wallet-file /path/to/wallet.json --drive-name "CONFESSIONS"
 ```
-Capture the folder ID you plan to upload into.
+ArDrive does not print a field literally named `folder-id`.
+For `confess.py push --folder-id`, use:
+- `created[].entityId` where `created[].type == "folder"` (UUID)
+- Not `metadataTxId`, `bundleTxId`, or the `entityId` where `type == "drive"`
+
+If your `create-drive` output includes:
+```json
+{
+  "type": "folder",
+  "entityId": "e77a0859-0d12-43d3-bcf7-03d17930c087"
+}
+```
+Then the folder id to pass is:
+`e77a0859-0d12-43d3-bcf7-03d17930c087`
 
 ### 5) Upload to Arweave via ArDrive
 ```bash
-python3 cli/confess.py push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ID>
+python3 cli/confess.py push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ENTITY_ID>
 ```
 Outputs:
 - Arweave TXID
@@ -213,10 +226,10 @@ Why `|` delimiters:
 - `seal` — create `payload.age`, embed into image, output `CSHA`  
   Password options: `--single-pass` / `--gen-single-pass` (single mode), or
   `--age-pass` + `--stego-pass` / `--gen-split-pass` (split mode)
-- `push` — upload locked artifact through ArDrive
+- `push` — upload locked artifact through ArDrive (`--folder-id` = `created[].entityId` where `type == "folder"`)
 - `mint` — generate Base calldata (manual broadcast). Optional: `--steg` to publish stego extraction password
 - `extract` — recover `payload.age` from a locked artifact (requires `--single-pass` or `--stego-pass`)
-- `verify` — check `sha512(payload.age)` vs expected `CSHA`; optional decrypt path with `--single-pass` or `--age-pass`
+- `verify` — check `sha512(payload.age)` vs expected `CSHA`
 
 ---
 
@@ -235,7 +248,7 @@ python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
 
 Optional local decryption:
 ```bash
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512> --decrypt --age-pass "<AGE_PASS>"
+age --decrypt --output payload.tar.gz payload.age
 tar -xzf payload.tar.gz
 ```
 

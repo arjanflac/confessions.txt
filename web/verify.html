@@ -790,6 +790,11 @@
         return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
       }
 
+      // Utility: single-quote shell escaping for copy/paste command snippets
+      function shellQuote(value) {
+        return "'" + String(value || "").replace(/'/g, "'\"'\"'") + "'";
+      }
+
       // Copy to clipboard
       async function copyToClipboard(text, btn) {
         try {
@@ -1020,10 +1025,13 @@
             "Compute sha512(payload.age) and compare to CSHA",
             "Optional: decrypt payload.age locally with age"
           ];
+          var cshaValue = /^[a-fA-F0-9]{128}$/.test(String(fields.CSHA || "").trim())
+            ? String(fields.CSHA).trim()
+            : "<CSHA_SHA512>";
           var extractCommand = fields.STEG
-            ? 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "' + fields.STEG + '"'
+            ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
-          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + (fields.CSHA || "<CSHA_SHA512>");
+          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
 
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified") + '<div class="data-grid">';
 
