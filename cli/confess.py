@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -485,6 +486,43 @@ def _with_heartbeat(label: str, fn, interval: float = 20.0):
         thread.join(timeout=0.1)
 
 
+@contextmanager
+def _suppress_native_output():
+    devnull_fd: Optional[int] = None
+    saved_stdout_fd: Optional[int] = None
+    saved_stderr_fd: Optional[int] = None
+    try:
+        devnull_fd = os.open(os.devnull, os.O_WRONLY)
+        saved_stdout_fd = os.dup(1)
+        saved_stderr_fd = os.dup(2)
+    except OSError:
+        for fd in (saved_stdout_fd, saved_stderr_fd, devnull_fd):
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+        # Best effort: if fd redirection fails, continue without suppression.
+        yield
+        return
+
+    try:
+        os.dup2(devnull_fd, 1)
+        os.dup2(devnull_fd, 2)
+        yield
+    finally:
+        try:
+            os.dup2(saved_stdout_fd, 1)
+            os.dup2(saved_stderr_fd, 2)
+        finally:
+            for fd in (saved_stdout_fd, saved_stderr_fd, devnull_fd):
+                if fd is not None:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+
+
 def _hstego_embed(cover: Path, payload: Path, output: Path, password: str, algo: str) -> None:
     hstegolib = _load_hstegolib()
 
@@ -525,26 +563,28 @@ def _hstego_embed(cover: Path, payload: Path, output: Path, password: str, algo:
 
 def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
     hstegolib = _load_hstegolib()
+    invalid_secret_msg = "HStego extract failed: wrong stego password (or no embedded payload)."
+
+    def _extract_with_suppressed_output(stego_obj) -> None:
+        with _suppress_native_output():
+            stego_obj.extract(str(stego_image), password, str(output))
+
     try:
         if _is_spatial_image(stego_image, hstegolib):
             stego = hstegolib.S_UNIWARD()
-            _with_heartbeat("HStego extract", lambda: stego.extract(str(stego_image), password, str(output)))
+            _with_heartbeat("HStego extract", lambda: _extract_with_suppressed_output(stego))
         elif _is_jpeg_image(stego_image):
             stego = hstegolib.J_UNIWARD()
-            _with_heartbeat("HStego extract", lambda: stego.extract(str(stego_image), password, str(output)))
+            _with_heartbeat("HStego extract", lambda: _extract_with_suppressed_output(stego))
         else:
             raise RuntimeError("Stego image format not supported (use .jpg or .png).")
     except SystemExit:
-        raise RuntimeError("HStego extract failed.")
+        raise RuntimeError(invalid_secret_msg)
     except Exception as e:
         raise RuntimeError(f"HStego extract failed: {e}")
 
-    if not output.exists():
-        raise RuntimeError("HStego extract failed: payload not recovered.")
-    if output.stat().st_size == 0:
-        raise RuntimeError("HStego extract failed: recovered payload is empty.")
-    if not _looks_like_age_ciphertext(output):
-        raise RuntimeError("HStego extract failed: recovered payload is not a valid age ciphertext.")
+    if not output.exists() or output.stat().st_size == 0 or not _looks_like_age_ciphertext(output):
+        raise RuntimeError(invalid_secret_msg)
 
 
 def _seal(args: argparse.Namespace) -> int:
@@ -563,6 +603,14 @@ def _seal(args: argparse.Namespace) -> int:
         _err(f"Testimony file not found: {text_path}")
         return 1
 
+    # Fail fast before encryption so we do not leave a fresh payload.age
+    # when HStego is unavailable (e.g., outside the project virtualenv).
+    try:
+        _load_hstegolib()
+    except RuntimeError as e:
+        _err(str(e))
+        return 1
+
     payload_tar = Path("payload.tar.gz")
     payload_age = Path("payload.age")
     output_image = Path(args.out or "locked_artifact.jpg")
@@ -573,7 +621,7 @@ def _seal(args: argparse.Namespace) -> int:
         payload_age.unlink()
 
     with tarfile.open(payload_tar, "w:gz") as tar:
-        tar.add(text_path, arcname="confession.md")
+        tar.add(text_path, arcname=text_path.name)
 
     if pass_mode == "single-generated":
         print("Password mode: single (--gen-single-pass).")
@@ -762,6 +810,11 @@ def _extract(args: argparse.Namespace) -> int:
     try:
         _hstego_extract(stego_image, output_path, password)
     except RuntimeError as e:
+        if output_path.exists():
+            try:
+                output_path.unlink()
+            except OSError:
+                pass
         _err(str(e))
         return 1
 
@@ -824,7 +877,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     seal = sub.add_parser("seal", help="Seal a testimony into a locked artifact")
     seal.add_argument("--image", required=True, help="Cover image (jpg/png)")
-    seal.add_argument("--text", required=True, help="Testimony text (markdown)")
+    seal.add_argument("--text", required=True, help="Testimony file (.md/.txt/etc)")
     seal.add_argument("--out", help="Output locked artifact jpg")
     seal.add_argument(
         "--algo",

@@ -882,7 +882,7 @@
           "If you have a CSHA value, compute sha512(payload.age) and compare",
           "Optional: decrypt payload.age locally with age"
         ];
-        var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
+        var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
 
         consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified") + '<div class="data-grid">' + renderDataBlock("Arweave TXID", txid, { copyValue: txid, mono: true }) + renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true }) + '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
         attachCopyHandlers();
@@ -1031,7 +1031,7 @@
           var extractCommand = fields.STEG
             ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
-          var commands = "# Download artifact\ncurl -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
+          var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
 
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified") + '<div class="data-grid">';
 

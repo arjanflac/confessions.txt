@@ -24,7 +24,7 @@ A **locked artifact**:
 ## Protocol overview
 
 1. **Record**: write testimony as plaintext (`confession.md` / `.txt`)
-2. **Pack**: package into an archive boundary (`payload.tar.gz`)
+2. **Pack**: package into an archive boundary (`payload.tar.gz`, preserving original filename + extension)
 3. **Seal**: encrypt with `age` → `payload.age`
 4. **Conceal**: embed `payload.age` into a cover image using HStego → `locked_artifact.jpg`
 5. **Archive**: upload `locked_artifact.jpg` to Arweave via ArDrive CLI → Arweave TXID
@@ -180,6 +180,17 @@ If your `create-drive` output includes:
 ```
 Then the folder id to pass is:
 `e77a0859-0d12-43d3-bcf7-03d17930c087`
+
+If the drive/folder already exists and you no longer have the folder `entityId` saved:
+```bash
+# List your drives, then copy the target driveId
+ardrive list-all-drives --wallet-file /path/to/wallet.json
+
+# List all folders/files in that drive and copy the folder entityId you want
+ardrive list-drive --wallet-file /path/to/wallet.json --drive-id <DRIVE_ID> --all
+```
+For private drives/folders, add `--private` (or provide `--drive-key`).
+Use that folder `entityId` as `--folder-id` in `confess.py push`.
 
 ### 5) Upload to Arweave via ArDrive
 ```bash
