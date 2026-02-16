@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#09090b" />
     <title>Verify — CONFESSIONS.txt</title>
@@ -1052,7 +1052,9 @@
             ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
           var commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
-          var resolvedTip = "Resolved means the Base TX hash is the metadata anchor, while ARTXID is the storage pointer and PROOF (CSHA) is the payload.age integrity hash.";
+          var resolvedTip = fields.STEG
+            ? "Protocol executed: confession written, sealed, and committed to permanent archive. This hash anchors an auditable record, with STEGO-PASS published for extraction."
+            : "Protocol executed: confession written, sealed, and committed to permanent archive. This hash anchors an auditable record.";
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified", resolvedTip) + '<div class="data-grid">';
 
           html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
@@ -1158,7 +1160,7 @@
 
       // Event listeners
       verifyBtn.addEventListener("click", handleVerify);
-      inputEl.addEventListener("keypress", function(e) {
+      inputEl.addEventListener("keydown", function(e) {
         if (e.key === "Enter") handleVerify();
       });
 
