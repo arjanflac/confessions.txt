@@ -892,7 +892,7 @@
       }
 
       function renderArtifactBlock(txid, arweaveUrl) {
-        return '<div class="data-block"><div class="data-header"><span class="data-label">Permanent Archive</span><div class="data-actions"><button class="copy-btn" data-copy="' + escapeHtml(arweaveUrl) + '" aria-label="Copy Archive URL">Copy URL</button></div></div><div class="data-value">URL: <a href="' + escapeHtml(arweaveUrl) + '" target="_blank" rel="noopener">' + escapeHtml(arweaveUrl) + '</a></div><div class="data-value mono subtle">TXID: ' + escapeHtml(txid) + '</div></div>';
+        return '<div class="data-block"><div class="data-header"><span class="data-label">PERMANENT ARCHIVE (AR)</span><div class="data-actions"><button class="copy-btn" data-copy="' + escapeHtml(arweaveUrl) + '" aria-label="Copy Archive URL">Copy URL</button></div></div><div class="data-value"><a href="' + escapeHtml(arweaveUrl) + '" target="_blank" rel="noopener">' + escapeHtml(arweaveUrl) + '</a></div><div class="data-value mono subtle">TXID: ' + escapeHtml(txid) + '</div></div>';
       }
 
       // Render audit section - all content is escaped
