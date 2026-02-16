@@ -8,6 +8,19 @@
     <meta name="theme-color" content="#09090b" />
     <title>Verify — CONFESSIONS.txt</title>
     <meta name="description" content="Resolve testimony provenance from Base transaction or Arweave TXID. Local verification. No keys requested." />
+    <meta name="author" content="arjanflac" />
+    <meta name="creator" content="arjanflac" />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CONFESSIONS.txt" />
+    <meta property="og:title" content="Verify — CONFESSIONS.txt" />
+    <meta property="og:description" content="Resolve testimony provenance from Base transaction hash or Arweave TXID." />
+    <meta property="og:url" content="https://confessionstxt.art/verify" />
+    <meta property="og:image" content="https://confessionstxt.art/logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Verify — CONFESSIONS.txt" />
+    <meta name="twitter:description" content="Resolve testimony provenance from Base transaction hash or Arweave TXID." />
+    <meta name="twitter:creator" content="@arjanflac" />
     <link rel="canonical" href="https://confessionstxt.art/verify" />
     <link rel="icon" href="logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -879,7 +892,7 @@
       }
 
       function renderArtifactBlock(txid, arweaveUrl) {
-        return '<div class="data-block"><div class="data-header"><span class="data-label">Arweave Archive</span><div class="data-actions"><button class="copy-btn" data-copy="' + escapeHtml(arweaveUrl) + '" aria-label="Copy Archive URL">Copy URL</button><button class="copy-btn" data-copy="' + escapeHtml(txid) + '" aria-label="Copy Arweave TXID">Copy TXID</button></div></div><div class="data-value">URL: <a href="' + escapeHtml(arweaveUrl) + '" target="_blank" rel="noopener">' + escapeHtml(arweaveUrl) + '</a></div><div class="data-value mono subtle">TXID (archive pointer): ' + escapeHtml(txid) + '</div></div>';
+        return '<div class="data-block"><div class="data-header"><span class="data-label">Permanent Archive</span><div class="data-actions"><button class="copy-btn" data-copy="' + escapeHtml(arweaveUrl) + '" aria-label="Copy Archive URL">Copy URL</button></div></div><div class="data-value">URL: <a href="' + escapeHtml(arweaveUrl) + '" target="_blank" rel="noopener">' + escapeHtml(arweaveUrl) + '</a></div><div class="data-value mono subtle">TXID: ' + escapeHtml(txid) + '</div></div>';
       }
 
       // Render audit section - all content is escaped
@@ -894,7 +907,7 @@
       function renderArweave(txid) {
         var safeTxid = safeId(txid);
         var arweaveUrl = "https://arweave.net/" + safeTxid;
-        var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
+        var commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
         var tooltip = "Archive pointer resolved. Run the audit commands to extract payload.age and confirm integrity.";
 
         consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified", tooltip) + '<div class="data-grid">' + renderArtifactBlock(txid, arweaveUrl) + '</div>' + renderAudit(commands) + '</div>';
@@ -1038,7 +1051,7 @@
           var extractCommand = fields.STEG
             ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
-          var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
+          var commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
           var resolvedTip = "Resolved means the Base TX hash is the metadata anchor, while ARTXID is the storage pointer and PROOF (CSHA) is the payload.age integrity hash.";
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified", resolvedTip) + '<div class="data-grid">';
 
