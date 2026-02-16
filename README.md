@@ -53,7 +53,6 @@ Flag convention:
 - `--gen-*` = CLI generates strong secret(s) and prints once.
 - Exactly one mode group is allowed per `seal` run.
   Do not mix single-mode flags with split-mode flags.
-- Generation method: Python `secrets.token_bytes(32)` (CSPRNG), encoded as URL-safe Base64 without `=` padding.
 
 Curatorial framing:
 - **Single-pass mode** preserves total custody: extraction and decryption remain bound to one key, so disclosure is all-or-nothing.
