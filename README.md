@@ -267,7 +267,6 @@ tar -xzf payload.tar.gz
 
 ## Operational notes
 
-- Do not commit `wallet.json` or `.confess/config.json`.
 - Store passphrases securely. Consider Shamir splitting (`ssss-split`) for redundancy.
 - If using split mode, treat `--age-pass` as strictly higher sensitivity than `--stego-pass`.
 - First HStego run may be slow due to native build/JIT overhead.
