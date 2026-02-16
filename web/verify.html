@@ -1053,11 +1053,10 @@
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
           var commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
           var resolvedTip = fields.STEG
-            ? "Protocol executed: confession written, sealed, and committed to permanent archive. This hash anchors an auditable record, with STEGO-PASS published for extraction."
-            : "Protocol executed: confession written, sealed, and committed to permanent archive. This hash anchors an auditable record.";
+            ? "Protocol executed: confession written, sealed, and committed to permanent archive. Auditable via published pass and proof hash."
+            : "Protocol executed: confession written, sealed, and committed to permanent archive. Auditable via pass and proof hash.";
           var html = '<div class="console-content">' + renderStatus("Resolved", "verified", resolvedTip) + '<div class="data-grid">';
 
-          html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
           if (fields.TITLE) {
             html += renderDataBlock("Title", quoteTitle(fields.TITLE));
           }
