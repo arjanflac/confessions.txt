@@ -353,6 +353,10 @@
         color: var(--accent);
       }
 
+      .status.verified .status-icon {
+        color: #4bd17a;
+      }
+
       .status.error {
         background: rgba(180, 130, 50, 0.1);
         border-color: #7A5A2A;
@@ -448,6 +452,13 @@
         margin-bottom: 0.32rem;
       }
 
+      .data-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
       .data-label {
         font-family: var(--font-mono);
         font-size: 0.68rem;
@@ -510,6 +521,11 @@
 
       .data-value.mono {
         font-size: 0.79rem;
+      }
+
+      .data-value.subtle {
+        color: var(--text-3);
+        font-size: 0.74rem;
       }
 
       /* -- Steps section ------------------------ */
@@ -853,38 +869,35 @@
         return '<div class="data-block"><div class="data-header"><span class="data-label">' + escapeHtml(label) + '</span>' + copyBtn + '</div><div class="data-value' + monoClass + '">' + valueHtml + '</div></div>';
       }
 
-      // Render steps section - all content is escaped
-      function renderSteps(steps, commands) {
-        var stepsHtml = "";
-        for (var i = 0; i < steps.length; i++) {
-          stepsHtml += '<li>' + escapeHtml(steps[i]) + '</li>';
-        }
-        var commandsHtml = "";
-        if (commands) {
-          var escapedCommands = escapeHtml(commands).replace(/^(# .+)$/gm, '<span class="comment">$1</span>');
-          commandsHtml = '<div class="commands"><div class="commands-header"><span class="commands-label">Commands</span><button class="copy-btn" data-copy="' + escapeHtml(commands) + '" aria-label="Copy commands">Copy</button></div><pre><code>' + escapedCommands + '</code></pre></div>';
-        }
-        return '<div class="steps-section"><div class="steps-header">Verification Steps</div><ol class="steps-list">' + stepsHtml + '</ol>' + commandsHtml + '</div>';
+      function quoteTitle(title) {
+        var clean = String(title || "").trim();
+        if (!clean) return clean;
+        var hasDoubleQuotes = clean.charAt(0) === '"' && clean.charAt(clean.length - 1) === '"';
+        var hasSingleQuotes = clean.charAt(0) === "'" && clean.charAt(clean.length - 1) === "'";
+        if (hasDoubleQuotes || hasSingleQuotes) return clean;
+        return '"' + clean + '"';
       }
 
-      // Render notes section
-      function renderNotes() {
-        return '<div class="notes"><p class="notes-text">Verification runs locally in your browser. No keys are requested. Decryption requires your passphrase or recipient key.</p></div>';
+      function renderArtifactBlock(txid, arweaveUrl) {
+        return '<div class="data-block"><div class="data-header"><span class="data-label">Arweave Archive</span><div class="data-actions"><button class="copy-btn" data-copy="' + escapeHtml(arweaveUrl) + '" aria-label="Copy Archive URL">Copy URL</button><button class="copy-btn" data-copy="' + escapeHtml(txid) + '" aria-label="Copy Arweave TXID">Copy TXID</button></div></div><div class="data-value">URL: <a href="' + escapeHtml(arweaveUrl) + '" target="_blank" rel="noopener">' + escapeHtml(arweaveUrl) + '</a></div><div class="data-value mono subtle">TXID (archive pointer): ' + escapeHtml(txid) + '</div></div>';
+      }
+
+      // Render audit section - all content is escaped
+      function renderAudit(commands) {
+        if (!commands) return "";
+        var escapedCommands = escapeHtml(commands).replace(/^(# .+)$/gm, '<span class="comment">$1</span>');
+        var commandsHtml = '<div class="commands"><div class="commands-header"><span class="commands-label">Commands</span><button class="copy-btn" data-copy="' + escapeHtml(commands) + '" aria-label="Copy commands">Copy</button></div><pre><code>' + escapedCommands + '</code></pre></div>';
+        return '<div class="steps-section"><div class="steps-header">Audit</div>' + commandsHtml + '</div>';
       }
 
       // Handle Arweave TXID directly
       function renderArweave(txid) {
         var safeTxid = safeId(txid);
         var arweaveUrl = "https://arweave.net/" + safeTxid;
-        var steps = [
-          "Download the locked artifact from Arweave",
-          "Extract payload.age with the confess CLI or HStego",
-          "If you have a CSHA value, compute sha512(payload.age) and compare",
-          "Optional: decrypt payload.age locally with age"
-        ];
         var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\n# hstego extract -i locked_artifact.jpg -o payload.age\n\n# Verify checksum (if CSHA known)\nsha512sum payload.age";
+        var tooltip = "Archive pointer resolved. Run the audit commands to extract payload.age and confirm integrity.";
 
-        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified") + '<div class="data-grid">' + renderDataBlock("Arweave TXID", txid, { copyValue: txid, mono: true }) + renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true }) + '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
+        consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Archive Located", "verified", tooltip) + '<div class="data-grid">' + renderArtifactBlock(txid, arweaveUrl) + '</div>' + renderAudit(commands) + '</div>';
         attachCopyHandlers();
       }
 
@@ -903,7 +916,7 @@
           html += renderDataBlock("Decoded Metadata", rawMetadata, { copyValue: rawMetadata, mono: true });
         }
         if (title) {
-          html += renderDataBlock("Title", title);
+          html += renderDataBlock("Title", quoteTitle(title));
         }
         if (txHash) {
           html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
@@ -1018,36 +1031,30 @@
           // Arweave label format
           var arId = safeId(arField);
           var arweaveUrl = "https://arweave.net/" + arId;
-
-          var steps = [
-            "Download the locked artifact from Arweave",
-            "Extract payload.age with the confess CLI or HStego",
-            "Compute sha512(payload.age) and compare to CSHA",
-            "Optional: decrypt payload.age locally with age"
-          ];
-          var cshaValue = /^[a-fA-F0-9]{128}$/.test(String(fields.CSHA || "").trim())
-            ? String(fields.CSHA).trim()
+          var proofValue = String(fields.CSHA || fields.PROOF || "").trim();
+          var cshaValue = /^[a-fA-F0-9]{128}$/.test(proofValue)
+            ? proofValue
             : "<CSHA_SHA512>";
           var extractCommand = fields.STEG
             ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
             : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
           var commands = "# Download artifact (-L follows redirects, -f prevents saving HTTP error pages)\ncurl -fL -o locked_artifact.jpg \"" + arweaveUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
+          var resolvedTip = "Resolved means the Base TX hash is the metadata anchor, while ARTXID is the storage pointer and PROOF (CSHA) is the payload.age integrity hash.";
+          var html = '<div class="console-content">' + renderStatus("Resolved", "verified", resolvedTip) + '<div class="data-grid">';
 
-          var html = '<div class="console-content">' + renderStatus("Resolved", "verified") + '<div class="data-grid">';
-
+          html += renderDataBlock("Base TX Hash", txHash, { copyValue: txHash, mono: true });
           if (fields.TITLE) {
-            html += renderDataBlock("Title", fields.TITLE);
+            html += renderDataBlock("Title", quoteTitle(fields.TITLE));
           }
-          html += renderDataBlock("Arweave TXID", arField, { copyValue: arField, mono: true });
-          html += renderDataBlock("Archive URL", arweaveUrl, { copyValue: arweaveUrl, isLink: true });
-          if (fields.CSHA) {
-            html += renderDataBlock("CSHA", fields.CSHA + " (SHA512)", { copyValue: fields.CSHA, mono: true });
+          html += renderArtifactBlock(arField, arweaveUrl);
+          if (proofValue) {
+            html += renderDataBlock("PROOF (CSHA)", proofValue, { copyValue: proofValue, mono: true });
           }
           if (fields.STEG) {
-            html += renderDataBlock("STEG (Public)", fields.STEG, { copyValue: fields.STEG, mono: true });
+            html += renderDataBlock("STEGO-PASS", fields.STEG, { copyValue: fields.STEG, mono: true });
           }
 
-          html += '</div>' + renderSteps(steps, commands) + renderNotes() + '</div>';
+          html += '</div>' + renderAudit(commands) + '</div>';
           consoleEl.innerHTML = html;
           attachCopyHandlers();
 
