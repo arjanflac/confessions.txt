@@ -275,4 +275,4 @@ tar -xzf payload.tar.gz
 
 ---
 
-<sub>CripTech</sub>
+**CripTech**
