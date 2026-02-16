@@ -275,6 +275,4 @@ tar -xzf payload.tar.gz
 
 ---
 
-## Status
-
-- Status: **R&D**
+<sub>CripTech</sub>
