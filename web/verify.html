@@ -7,19 +7,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#09090b" />
     <title>Verify — CONFESSIONS.txt</title>
-    <meta name="description" content="Resolve testimony provenance from Base transaction or Arweave TXID. Local verification. No keys requested." />
+    <meta name="description" content="Resolve testimony provenance from base transaction hash into an auditable evidence trail." />
     <meta name="author" content="arjanflac" />
     <meta name="creator" content="arjanflac" />
     <meta name="robots" content="index,follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CONFESSIONS.txt" />
     <meta property="og:title" content="Verify — CONFESSIONS.txt" />
-    <meta property="og:description" content="Resolve testimony provenance from Base transaction hash or Arweave TXID." />
+    <meta property="og:description" content="Resolve testimony provenance from base transaction hash into an auditable evidence trail." />
     <meta property="og:url" content="https://confessionstxt.art/verify" />
     <meta property="og:image" content="https://confessionstxt.art/logo.png" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Verify — CONFESSIONS.txt" />
-    <meta name="twitter:description" content="Resolve testimony provenance from Base transaction hash or Arweave TXID." />
+    <meta name="twitter:description" content="Resolve testimony provenance from base transaction hash into an auditable evidence trail." />
     <meta name="twitter:creator" content="arjanflac" />
     <link rel="canonical" href="https://confessionstxt.art/verify" />
     <link rel="icon" href="logo.png" type="image/png" />
@@ -167,7 +167,7 @@
       .masthead-meta {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: var(--space-sm);
         flex-wrap: wrap;
         padding: 0.65rem 1rem;
@@ -183,6 +183,7 @@
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--text-2);
+        text-align: left;
       }
 
       .masthead-main {
@@ -713,7 +714,7 @@
 
       <header class="masthead card">
         <div class="masthead-meta">
-          <span class="revision-line">Local Verification Console</span>
+          <span class="revision-line">Protocol Verification Console</span>
         </div>
         <div class="masthead-main">
           <div class="logo-frame">
@@ -721,7 +722,7 @@
           </div>
           <div class="title-group">
             <h1 class="title">Verify</h1>
-            <p class="lede">Resolve a Base transaction hash or Arweave TXID into an auditable evidence trail.</p>
+            <p class="lede">Resolve a published Base TX Hash into an auditable evidence trail.</p>
           </div>
         </div>
       </header>
@@ -733,18 +734,17 @@
             id="input"
             class="input-field"
             type="text"
-            placeholder="0x... transaction hash or Arweave TXID"
+            placeholder="0x... transaction hash"
             autocomplete="off"
             spellcheck="false"
-            aria-describedby="input-help"
           />
           <button id="verify" class="submit-btn">Resolve Artifact</button>
         </div>
-        <p id="input-help" class="input-note">Verification runs locally in your browser. No keys are requested.</p>
+        <p class="input-note">Verification runs locally in your browser</p>
       </section>
 
       <section id="console" class="console card" aria-live="polite" aria-atomic="true">
-        <div class="console-empty">Awaiting a transaction hash or Arweave TXID evidence pointer.</div>
+        <div class="console-empty">awaiting an evidence pointer</div>
       </section>
 
     </main>
@@ -789,9 +789,9 @@
             if ((hasPipeDelimitedLabel && !looksLikeKnownField) || looksLikeExplicitTitle || looksLikeFreeTitle) {
               if (looksLikeExplicitTitle) {
                 fields.TITLE = trimmed.slice(trimmed.indexOf(":") + 1).trim();
-              } else {
+      } else {
                 fields.TITLE = trimmed;
-              }
+      }
               continue;
             }
           }
@@ -1153,7 +1153,7 @@
         } else if (isArTxid) {
           renderArweave(value);
         } else {
-          consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid Input", "error") + '<div class="data-grid">' + renderDataBlock("Status", "Input not recognized. Enter a 0x... transaction hash or Arweave TXID.") + '</div></div>';
+          consoleEl.innerHTML = '<div class="console-content">' + renderStatus("Invalid Input", "error") + '<div class="data-grid">' + renderDataBlock("Status", "Input not recognized. Enter a 0x... transaction hash.") + '</div></div>';
         }
       }
 
