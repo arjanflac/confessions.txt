@@ -10,7 +10,6 @@
     <meta name="description" content="Resolve testimony provenance from base transaction hash into an auditable evidence trail." />
     <meta name="author" content="arjanflac" />
     <meta name="creator" content="arjanflac" />
-    <meta name="deploy-probe" content="cf-pages-check-2026-02-20-2" />
     <meta name="robots" content="index,follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CONFESSIONS.txt" />
@@ -51,6 +50,34 @@
         --space-md: 1.4rem;
         --space-lg: 2.1rem;
         --space-xl: 3rem;
+      }
+
+      @view-transition {
+        navigation: auto;
+      }
+
+      @keyframes routeFadeOut {
+        to {
+          opacity: 0;
+          transform: translateY(-4px);
+          filter: blur(1px);
+        }
+      }
+
+      @keyframes routeFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+          filter: blur(1px);
+        }
+      }
+
+      ::view-transition-old(root) {
+        animation: routeFadeOut 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      ::view-transition-new(root) {
+        animation: routeFadeIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
       * {
@@ -102,6 +129,13 @@
         z-index: 1;
         opacity: 0;
         animation: riseIn 0.42s ease forwards;
+        transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+      }
+
+      html.is-routing .shell {
+        opacity: 0;
+        transform: translateY(6px);
+        filter: blur(1px);
       }
 
       @keyframes riseIn {
@@ -710,7 +744,7 @@
   <body>
     <main class="shell">
       <nav class="nav" aria-label="Breadcrumb">
-        <a href="index.html" class="nav-home">Return</a>
+        <a href="index.html" class="nav-home" data-smooth-nav>Return</a>
       </nav>
 
       <header class="masthead card">
@@ -750,6 +784,7 @@
 
     </main>
 
+    <script src="page-transition.js"></script>
     <script>
       // Note: innerHTML is used with proper HTML escaping via escapeHtml() function
       // All user input and external data is sanitized before insertion

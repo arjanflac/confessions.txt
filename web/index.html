@@ -10,7 +10,6 @@
     <meta name="description" content="Protocol to transmute high‑voltage memory into immutable, cryptographically sealed visual artifacts." />
     <meta name="author" content="arjanflac" />
     <meta name="creator" content="arjanflac" />
-    <meta name="deploy-probe" content="cf-pages-check-2026-02-20-2" />
     <meta name="robots" content="index,follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CONFESSIONS.txt" />
@@ -51,6 +50,34 @@
         --space-md: 1.4rem;
         --space-lg: 2.1rem;
         --space-xl: 3rem;
+      }
+
+      @view-transition {
+        navigation: auto;
+      }
+
+      @keyframes routeFadeOut {
+        to {
+          opacity: 0;
+          transform: translateY(-4px);
+          filter: blur(1px);
+        }
+      }
+
+      @keyframes routeFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+          filter: blur(1px);
+        }
+      }
+
+      ::view-transition-old(root) {
+        animation: routeFadeOut 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      ::view-transition-new(root) {
+        animation: routeFadeIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
       * {
@@ -105,6 +132,13 @@
         gap: 1.4rem;
         position: relative;
         z-index: 1;
+        transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+      }
+
+      html.is-routing .shell {
+        opacity: 0;
+        transform: translateY(6px);
+        filter: blur(1px);
       }
 
       @keyframes riseIn {
@@ -453,12 +487,13 @@
 
       <div class="action-band">
         <nav class="actions" aria-label="Primary">
-          <a class="btn primary" href="verify.html">Verify Artifact</a>
+          <a class="btn primary" href="verify.html" data-smooth-nav>Verify Artifact</a>
           <a class="btn secondary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener">DEPLOY CLI</a>
         </nav>
       </div>
 
       <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener">@arjan.flac</a></footer>
     </main>
+    <script src="page-transition.js"></script>
   </body>
 </html>
