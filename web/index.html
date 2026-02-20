@@ -6,6 +6,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#09090b" />
+    <style>
+      html, body { background-color: #09090b; color-scheme: dark; }
+    </style>
     <title>CONFESSIONS.txt — Proof of Omertà</title>
     <meta name="description" content="Protocol to transmute high‑voltage memory into immutable, cryptographically sealed visual artifacts." />
     <meta name="author" content="arjanflac" />
@@ -54,30 +57,6 @@
 
       @view-transition {
         navigation: auto;
-      }
-
-      @keyframes routeFadeOut {
-        to {
-          opacity: 0;
-          transform: translateY(-4px);
-          filter: blur(1px);
-        }
-      }
-
-      @keyframes routeFadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(6px);
-          filter: blur(1px);
-        }
-      }
-
-      ::view-transition-old(root) {
-        animation: routeFadeOut 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-      }
-
-      ::view-transition-new(root) {
-        animation: routeFadeIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
       }
 
       * {
@@ -132,13 +111,6 @@
         gap: 1.4rem;
         position: relative;
         z-index: 1;
-        transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
-      }
-
-      html.is-routing .shell {
-        opacity: 0;
-        transform: translateY(6px);
-        filter: blur(1px);
       }
 
       @keyframes riseIn {
