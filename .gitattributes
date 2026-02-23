@@ -1,0 +1,3 @@
+# Keep GitHub Linguist focused on the CLI source language.
+# The web folder contains published site assets, not primary project code.
+web/** linguist-detectable=false

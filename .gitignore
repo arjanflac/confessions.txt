@@ -1,0 +1,31 @@
+node_modules
+.venv
+venv
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+
+wallet.json
+*.wallet.json
+.confess/
+.confess/config.json
+
+payload.tar.gz
+*.tar.gz
+payload.age
+*.age
+locked_*.jpg
+stego*.jpg
+
+dist
+.next
+.wrangler
+.DS_Store
+
+# Dev/design screenshots
+index-*.png
+verify-*.png
+
+# Tooling
+.playwright-mcp/

@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#09090b" />
+    <style>
+      html, body { background-color: #09090b; color-scheme: dark; }
+    </style>
+    <title>CONFESSIONS.txt — Proof of Omertà</title>
+    <meta name="description" content="Protocol to transmute high‑voltage memory into immutable, cryptographically sealed visual artifacts." />
+    <meta name="author" content="Arjan" />
+    <meta name="creator" content="Arjan" />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CONFESSIONS.txt" />
+    <meta property="og:title" content="CONFESSIONS.txt — Proof of Omertà" />
+    <meta property="og:description" content="Protocol to transmute high‑voltage memory into immutable, cryptographically sealed visual artifacts." />
+    <meta property="og:url" content="https://confessionstxt.art/" />
+    <meta property="og:image" content="https://confessionstxt.art/logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="CONFESSIONS.txt — Proof of Omertà" />
+    <meta name="twitter:description" content="Protocol to transmute high‑voltage memory into immutable, cryptographically sealed visual artifacts." />
+    <link rel="canonical" href="https://confessionstxt.art/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "CONFESSIONS.txt",
+        "url": "https://confessionstxt.art/",
+        "description": "Protocol to transmute high-voltage memory into immutable, cryptographically sealed visual artifacts.",
+        "creator": {
+          "@type": "Person",
+          "name": "Arjan",
+          "alternateName": "arjan.flac"
+        }
+      }
+    </script>
+    <link rel="icon" href="logo.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg:          #09090b;
+        --surface-1:   #111113;
+        --surface-2:   #18181b;
+        --border:      #1f1f23;
+        --text-1:      #e2e4e9;
+        --text-2:      #a0a8b6;
+        --text-3:      #5a6170;
+        --accent:      #B05454;
+        --accent-dim:  #6E2D32;
+
+        --font-title: "Cormorant Garamond", Georgia, serif;
+        --font-body: "IBM Plex Sans", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+        --radius-md: 10px;
+        --radius-lg: 16px;
+
+        --space-xs: 0.55rem;
+        --space-sm: 0.95rem;
+        --space-md: 1.4rem;
+        --space-lg: 2.1rem;
+        --space-xl: 3rem;
+      }
+
+      @view-transition {
+        navigation: auto;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        color: var(--text-1);
+        font-family: var(--font-body);
+        line-height: 1.54;
+        background:
+          radial-gradient(circle at 8% -14%, rgba(176, 84, 84, 0.04), transparent 39%),
+          radial-gradient(circle at 98% 0%, rgba(176, 84, 84, 0.03), transparent 43%),
+          linear-gradient(var(--bg), var(--bg));
+        position: relative;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 2.5rem var(--space-md) 1.5rem;
+        padding-top: max(2.5rem, env(safe-area-inset-top, 0px));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.4rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      @keyframes riseIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* -- Hero -------------------------------- */
+
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.8rem;
+        width: 100%;
+        opacity: 0;
+        animation: riseIn 0.5s ease forwards;
+      }
+
+      .logo-frame {
+        width: 144px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .logo-frame img {
+        width: 100%;
+        height: auto;
+      }
+
+      .hero-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.45rem;
+      }
+
+      .title {
+        font-family: var(--font-title);
+        font-size: clamp(2.6rem, 7vw, 4.2rem);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 0.95;
+        color: var(--text-1);
+      }
+
+      .subtitle {
+        font-family: var(--font-mono);
+        font-size: 0.73rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .subtitle-name {
+        color: var(--accent);
+      }
+
+      .subtitle-tag {
+        color: var(--text-3);
+      }
+
+      .tagline {
+        font-size: 1.12rem;
+        font-weight: 700;
+        line-height: 1.64;
+        color: var(--text-2);
+        white-space: nowrap;
+      }
+
+      /* -- Divider ------------------------------ */
+
+      .divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(176, 84, 84, 0.25), transparent);
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.12s forwards;
+      }
+
+      /* -- Protocol section --------------------- */
+
+      .protocol-section {
+        width: 100%;
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.2s forwards;
+      }
+
+      .protocol-inner {
+        padding: 1.3rem 1.4rem 1.4rem;
+      }
+
+      .section-head {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--text-1);
+        text-align: center;
+        padding-bottom: 0.85rem;
+        margin-bottom: 0.2rem;
+      }
+
+      .process-list {
+        list-style: none;
+        display: grid;
+        gap: 0;
+      }
+
+      .process-list li {
+        display: grid;
+        grid-template-columns: minmax(6.5rem, 8rem) 1fr;
+        align-items: start;
+        gap: 0.9rem;
+        line-height: 1.5;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .process-list li:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .step-name {
+        font-family: var(--font-mono);
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--text-2);
+        text-transform: uppercase;
+        letter-spacing: 0.17em;
+        padding-top: 0.08rem;
+      }
+
+      .step-purpose {
+        color: var(--text-1);
+        font-size: 0.97rem;
+      }
+
+      /* -- Actions ------------------------------ */
+
+      .action-band {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        opacity: 0;
+        animation: riseIn 0.5s ease 0.3s forwards;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.9rem;
+        padding: 0.75rem 1.8rem;
+        border-radius: var(--radius-md);
+        border: 1px solid;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--text-3);
+        outline-offset: 3px;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn.primary {
+        background: transparent;
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary:hover {
+        background: rgba(176, 84, 84, 0.08);
+      }
+
+      .btn.secondary {
+        background: transparent;
+        border-color: var(--text-2);
+        color: var(--text-2);
+      }
+
+      .btn.secondary:hover {
+        background: rgba(160, 168, 182, 0.08);
+        border-color: var(--text-1);
+        color: var(--text-1);
+      }
+
+      /* -- Credit ------------------------------- */
+
+      .credit {
+        margin-top: auto;
+        text-align: center;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--text-3);
+      }
+
+      .credit a {
+        color: var(--text-2);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .credit a:hover {
+        border-color: var(--text-3);
+        color: var(--text-1);
+      }
+
+      /* -- Mobile ------------------------------- */
+
+      @media (max-width: 760px) {
+        .shell {
+          padding: 1.2rem 1.25rem 1.2rem;
+          padding-top: max(1.2rem, env(safe-area-inset-top, 0px));
+          padding-bottom: max(1.2rem, env(safe-area-inset-bottom, 0px));
+          gap: 0.75rem;
+        }
+
+        .hero {
+          gap: 0.5rem;
+        }
+
+        .logo-frame {
+          width: 104px;
+        }
+
+        .hero-text {
+          gap: 0.3rem;
+        }
+
+        .tagline {
+          font-size: clamp(0.66rem, 3.4vw, 0.84rem);
+          letter-spacing: -0.02em;
+          white-space: normal;
+          line-height: 1.5;
+        }
+
+        .section-head {
+          padding-bottom: 0.45rem;
+          font-size: 0.65rem;
+        }
+
+        .protocol-inner {
+          padding: 0.7rem 0.9rem 0.8rem;
+        }
+
+        .process-list li {
+          grid-template-columns: 1fr;
+          gap: 0.1rem;
+          padding: 0.35rem 0;
+        }
+
+        .step-name {
+          font-size: 0.68rem;
+        }
+
+        .step-purpose {
+          font-size: 0.92rem;
+        }
+
+        .action-band {
+          gap: 0.55rem;
+        }
+
+        .actions {
+          flex-direction: column;
+          width: 100%;
+          gap: 0.45rem;
+        }
+
+        .btn {
+          width: 100%;
+          min-height: 2.5rem;
+          padding: 0.55rem 1.4rem;
+        }
+
+        .credit {
+          font-size: 0.68rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="logo-frame">
+          <img src="logo.png" alt="" />
+        </div>
+        <div class="hero-text">
+          <h1 class="title">Proof of Omertà</h1>
+          <p class="subtitle"><span class="subtitle-name">CONFESSIONS.txt</span> <span class="subtitle-tag">(R&amp;D)</span></p>
+          <p class="tagline">Transmute high‑voltage memory into immutable artifacts</p>
+        </div>
+      </header>
+
+      <div class="divider" role="separator"></div>
+
+      <section class="protocol-section">
+        <div class="protocol-inner">
+          <h2 class="section-head">Protocol</h2>
+          <ol class="process-list" role="list">
+            <li><span class="step-name">Record</span><span class="step-purpose">Capture testimony in plaintext.</span></li>
+            <li><span class="step-name">Seal</span><span class="step-purpose">Encrypt the payload with age.</span></li>
+            <li><span class="step-name">Conceal</span><span class="step-purpose">Embed the sealed payload into a carrier artifact via HStego.</span></li>
+            <li><span class="step-name">Archive</span><span class="step-purpose">Store the locked artifact on Arweave.</span></li>
+            <li><span class="step-name">Broadcast</span><span class="step-purpose">Publish the artifact as a titled work on Base.</span></li>
+          </ol>
+        </div>
+      </section>
+
+      <div class="action-band">
+        <nav class="actions" aria-label="Primary">
+          <a class="btn primary" href="verify.html" data-smooth-nav>Verify Artifact</a>
+          <a class="btn secondary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener">DEPLOY CLI</a>
+        </nav>
+      </div>
+
+      <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener">@arjan.flac</a></footer>
+    </main>
+    <script src="page-transition.js"></script>
+  </body>
+</html>
