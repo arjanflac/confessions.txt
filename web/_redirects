@@ -1,1 +1,1 @@
-/verify/:locator /verify.html 200
+/verify/:locator /verify?tx=:locator 302
