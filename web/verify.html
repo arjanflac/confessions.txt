@@ -237,14 +237,17 @@
 
       .logo-frame {
         width: 84px;
+        height: 122px;
         display: flex;
         align-items: flex-start;
         justify-content: center;
       }
 
       .logo-frame img {
-        width: 100%;
-        height: auto;
+        width: auto;
+        height: 100%;
+        max-width: 100%;
+        object-fit: contain;
       }
 
       .title-group {
@@ -979,6 +982,8 @@
       const consoleEl = document.getElementById("console");
       const inputEl = document.getElementById("input");
       const verifyBtn = document.getElementById("verify");
+      const ARWEAVE_TXID_PATTERN = /^[a-zA-Z0-9_-]{43}$/;
+      const MAX_PREVIEW_BYTES = 25 * 1024 * 1024;
 
       let activePreviewObjectUrl = null;
 
@@ -1038,8 +1043,13 @@
           .replace(/'/g, "&#39;");
       }
 
-      function safeId(value) {
-        return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "");
+      function isArweaveTxid(value) {
+        return ARWEAVE_TXID_PATTERN.test(String(value || "").trim());
+      }
+
+      function normalizeArweaveTxid(value) {
+        const normalized = String(value || "").trim();
+        return isArweaveTxid(normalized) ? normalized : null;
       }
 
       function shellQuote(value) {
@@ -1554,14 +1564,26 @@
       }
 
       async function fetchArtifactPreview(txid) {
-        const safeTxidValue = safeId(txid);
+        const safeTxidValue = normalizeArweaveTxid(txid);
+        if (!safeTxidValue) {
+          throw new Error("Invalid Arweave transaction id.");
+        }
         const canonicalUrl = "https://arweave.net/" + safeTxidValue;
         const response = await fetch(canonicalUrl, { mode: "cors", cache: "default" });
         if (!response.ok) {
           throw new Error("Arweave artifact request failed with status " + response.status + ".");
         }
 
+        const contentLength = Number(response.headers.get("content-length"));
+        if (Number.isFinite(contentLength) && contentLength > MAX_PREVIEW_BYTES) {
+          throw new Error("Artifact is larger than the browser preview limit (" + formatBytes(MAX_PREVIEW_BYTES) + ").");
+        }
+
         const blob = await response.blob();
+        if (blob.size > MAX_PREVIEW_BYTES) {
+          throw new Error("Artifact is larger than the browser preview limit (" + formatBytes(MAX_PREVIEW_BYTES) + ").");
+        }
+
         const contentType = blob.type || response.headers.get("content-type") || "";
         const preview = {
           canonicalUrl: canonicalUrl,
@@ -1605,7 +1627,13 @@
       }
 
       async function renderArweave(txid) {
-        const safeTxidValue = safeId(txid);
+        const safeTxidValue = normalizeArweaveTxid(txid);
+        if (!safeTxidValue) {
+          releasePreviewUrl();
+          consoleEl.innerHTML = '<div class="console-content">' + renderStatusPanel("Invalid Input", "error", "Enter a valid 43-character Arweave TXID.") + "</div>";
+          attachCopyHandlers();
+          return;
+        }
         const canonicalUrl = "https://arweave.net/" + safeTxidValue;
         renderLoading("Fetching Artifact", "Loading the artifact from Arweave.");
 
@@ -1697,7 +1725,13 @@
             return;
           }
 
-          const arId = safeId(arField);
+          const arId = normalizeArweaveTxid(arField);
+          if (!arId) {
+            releasePreviewUrl();
+            consoleEl.innerHTML = '<div class="console-content">' + renderStatusPanel("Invalid Archive Pointer", "error", "The on-chain ARTXID field is not a valid Arweave transaction id.") + '<div class="data-grid">' + renderDataBlock("Raw ARTXID", arField, { mono: true, copyValue: arField }) + "</div></div>";
+            attachCopyHandlers();
+            return;
+          }
           const canonicalUrl = "https://arweave.net/" + arId;
           const proofValue = String(fields.CSHA || fields.PROOF || "").trim();
           const cshaValue = /^[a-fA-F0-9]{128}$/.test(proofValue) ? proofValue : "<CSHA_SHA512>";
@@ -1752,7 +1786,7 @@
 
         const isTx = /^0x[a-fA-F0-9]{64}$/.test(value);
         const isIpfs = /^(bafy|bafk|Qm)/i.test(value);
-        const isArTxid = /^[a-zA-Z0-9_-]{32,64}$/.test(value);
+        const isArTxid = isArweaveTxid(value);
 
         if (isTx) {
           await verifyTx(value.toLowerCase());

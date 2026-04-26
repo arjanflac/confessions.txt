@@ -1,108 +1,135 @@
-# CONFESSIONS.txt \ Proof of Omertà
-*Research & Development*
+<p align="center">
+  <img src="web/logo.png" alt="CONFESSIONS.txt sword logo" width="120" />
+</p>
 
-Local-first CLI for producing **permanently stored** and **cryptographically sealed** testimony artifacts.
+# CONFESSIONS.txt
+### Proof of Omertà
+*Research & development*
 
-The protocol seals a plaintext testimony file with `age` into `payload.age`, embeds that encrypted payload into a carrier image using **HStego** (adaptive JPEG/bitmap steganography), uploads the locked artifact to **Arweave** (content-addressed, immutable storage), and generates base transaction calldata for manual EVM-wallet broadcast so the artifact can be publicly *referenced* and its integrity *verified* via an on-chain metadata trail.
+CONFESSIONS.txt is a local-first CLI and static verifier for producing cryptographically sealed testimony artifacts.
 
-Website verifier: **https://confessionstxt.art/verify**
+The protocol packages a plaintext testimony file, encrypts it with `age` into `payload.age`, embeds that ciphertext into a carrier image with HStego, uploads the locked artifact to Arweave through ArDrive, and generates Base calldata so the artifact can be publicly referenced and later audited.
 
----
+Primary use cases include sealed whistleblower disclosures, survivor recordkeeping, delayed-release testimony, and other workflows where an operator needs a durable public pointer without publishing plaintext.
 
-## What it produces
+Verifier: **https://confessionstxt.art/verify**
 
-A **locked artifact**:
+## Protocol summary
 
-- `locked_artifact.jpg` — a normal-looking image that contains an embedded encrypted payload  
-- `payload.age` — the encrypted payload (ciphertext)
-- `CSHA` — `sha512(payload.age)` integrity hash used for verification
+1. **Record**: write testimony as plaintext (`.md`, `.txt`, or similar).
+2. **Pack**: archive the file into `payload.tar.gz` so the original filename survives.
+3. **Seal**: encrypt the archive with `age` to produce `payload.age`.
+4. **Conceal**: embed `payload.age` into a carrier image with HStego.
+5. **Archive**: upload the locked artifact to Arweave through ArDrive.
+6. **Broadcast**: generate Base calldata containing the artifact pointer and integrity hash.
 
-> Steganography is treated as **obfuscation/transport**. Confidentiality comes from `age` encryption.
+**Canonical integrity value**
 
----
+- `CSHA = sha512(payload.age)`
 
-## Protocol overview
+The integrity hash is over the encrypted payload, not the plaintext archive.
 
-1. **Record**: write testimony as plaintext (`confession.md` / `.txt`)
-2. **Pack**: package into an archive boundary (`payload.tar.gz`, preserving original filename + extension)
-3. **Seal**: encrypt with `age` → `payload.age`
-4. **Conceal**: embed `payload.age` into a cover image using HStego → `locked_artifact.jpg`
-5. **Archive**: upload `locked_artifact.jpg` to Arweave via ArDrive CLI → Arweave TXID
-6. **Broadcast**: generate base calldata containing a catalog-style metadata label (`TITLE | ARTXID | CSHA`).  
-   User signs/broadcasts manually from an EVM wallet that supports native calldata input (wallet custody remains with the operator).
+## Outputs
 
-**Canonical integrity proof:**
-- `CSHA = SHA-512(payload.age)` (not the plaintext archive)
+- `payload.age` - encrypted payload produced by `age`
+- `locked_artifact.jpg` - carrier image containing the encrypted payload
+- `CSHA` - SHA-512 checksum over `payload.age`
+- Base calldata from `mint` - operator-broadcast metadata reference
 
----
+Steganography is treated as concealment and transport. Confidentiality comes from `age`.
+
+## On-chain metadata
+
+`mint` builds a human-readable metadata label and prints the corresponding calldata:
+
+```text
+TITLE | ARTXID:<ARWEAVE_TXID> | CSHA:<SHA512>
+TITLE | ARTXID:<ARWEAVE_TXID> | CSHA:<SHA512> | STEG:<VALUE>
+```
+
+- `ARTXID` points to the Arweave artifact
+- `CSHA` is the canonical verification value
+- `STEG` is optional and makes extraction public if included
+
+The Base transaction is the pointer layer. The artifact itself lives on Arweave. The plaintext testimony stays local unless the operator chooses to disclose it.
+
+## Public vs private surfaces
+
+What can become public:
+
+- the locked artifact on Arweave
+- the Base metadata label
+- the stego extraction secret if `STEG` is published on-chain
+
+What remains private by default:
+
+- the plaintext testimony file
+- the `age` passphrase
+- the stego passphrase, unless published as `STEG`
 
 ## Password modes
 
-`seal` supports two security modes:
+`seal` supports two modes:
 
-- **Split-pass mode (flagship)**
+- **Split-pass mode**
   - custom: `--age-pass "<AGE_PASS>" --stego-pass "<STEGO_PASS>"`
   - generated: `--gen-split-pass`
-  Separate secrets are used for encryption and embedding.
 - **Single-pass mode**
   - custom: `--single-pass "<PASS>"`
   - generated: `--gen-single-pass`
-  One secret is used for both `age` encryption and HStego embedding.
 
-Flag convention:
-- `--gen-*` = CLI generates strong secret(s) and prints once.
-- Exactly one mode group is allowed per `seal` run.
-  Do not mix single-mode flags with split-mode flags.
+Operational difference:
 
-Curatorial framing:
-- **Split-pass mode** separates proof from revelation: release `--stego-pass` to allow extraction and `CSHA` verification, while plaintext remains sealed behind `--age-pass`.
-- **Single-pass mode** preserves total custody: extraction and decryption remain bound to one key, so disclosure is all-or-nothing.
-- Optional public-proof posture: publish `STEG` in on-chain metadata so third parties can independently extract and hash-check without requesting extraction access.
+- split mode separates extraction from decryption
+- single-pass mode binds extraction and decryption to one secret
 
----
+In split mode, `--stego-pass` can be shared to allow extraction of `payload.age` and checksum verification without disclosing the `--age-pass` required for decryption.
+
+## Security model
+
+- **Local-first**: plaintext remains on the operator's machine unless intentionally disclosed.
+- **No wallet custody in the CLI**: `mint` only prints calldata. The operator signs and broadcasts manually from their own wallet.
+- **Defense in depth**: if embedding is detected, `payload.age` is still encrypted.
+- **Public verifiability**: anyone with the artifact and the correct extraction path can verify `CSHA`.
+- **Experimental**: this is R&D software, not a complete safety plan or a substitute for legal, medical, or security advice.
+
+Notes:
+
+- no stego method is guaranteed undetectable
+- embedding capacity is payload-rate constrained by cover image size and format
+- recommended wallet for manual calldata broadcast: **Rabby**
 
 ## Repository
 
-- `cli/confess.py` — build, upload, and verify artifacts
-- `web/` — static site + verifier (hosted at `confessionstxt.art`)
-
----
-
-## Security model (high level)
-
-- **Local-first:** plaintext testimony stays local; only encrypted payload is embedded/uploaded.
-- **Trustless broadcasting:** the CLI never asks for EVM private keys. It only prints calldata;
-  you broadcast manually from an EVM wallet that supports native calldata entry. Recommended:
-  **Rabby** (power-user workflow, transaction simulation including calldata, open source).
-- **Defense in depth:** even if embedding is detected, `payload.age` remains unreadable without the key.
-- **Public verifiability:** base metadata can publish `ARTXID` + `CSHA` so anyone can confirm
-  the Arweave artifact matches the sealed payload hash.
-
-No stego method is guaranteed undetectable; embedding is **payload-rate constrained** to reduce
-steganalysis reliability.
-
----
+- `cli/confess.py` - CLI for sealing, uploading, extracting, and verifying artifacts
+- `cli/confess` - small entry wrapper for the CLI
+- `web/` - static site and browser verifier deployed at `confessionstxt.art`
+- `scripts/install_hstego_mac.sh` - macOS helper for building HStego with JPEG support
 
 ## Prerequisites
 
-- Python **3.11 / 3.12** recommended (3.9+ minimum)
-- `age` CLI
-- HStego + native JPEG headers (builds a small extension)
-- `ardrive` CLI (ArDrive upload)
-- Optional: `ssss-split` for passphrase splitting (2-of-3, etc.)
+- Python **3.11 / 3.12** recommended
+- `age`
+- HStego with native JPEG support
+- `ardrive` CLI
+- optional: `ssss-split` for Shamir secret splitting
 
-`python3 cli/confess.py doctor` checks availability and prints install hints.
+Check the environment with:
 
----
+```bash
+python3 cli/confess.py doctor
+```
 
 ## Install
 
-### macOS (Homebrew + venv)
+### macOS
+
 ```bash
 xcode-select --install
 brew install python@3.12 age jpeg
 
-$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv && source .venv/bin/activate
+$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
 
 python -m pip install imageio numpy scipy pycryptodome numba Pillow
@@ -112,11 +139,13 @@ npm install -g ardrive-cli
 ```
 
 ### Ubuntu
+
 ```bash
 sudo apt-get update
 sudo apt-get install -y age python3-pip build-essential libjpeg-dev python3-tk
 
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
 
 python -m pip install imageio numpy scipy pycryptodome numba Pillow
@@ -125,162 +154,154 @@ python -m pip install git+https://github.com/daniellerch/hstego.git@v0.5
 npm install -g ardrive-cli
 ```
 
----
+## Quickstart
 
-## End-to-end quickstart
+### 1. Run diagnostics
 
-### 1) Diagnostics
 ```bash
 python3 cli/confess.py doctor
 ```
 
-### 2) Configure wallet path
+### 2. Store your Arweave wallet path
+
 ```bash
 python3 cli/confess.py init
 ```
-Enter your Arweave `wallet.json` path when prompted.  
-`init` stores the path in `.confess/config.json` (gitignored).
 
-### 3) Seal (encrypt + embed)
+`init` stores the selected wallet path in `.confess/config.json`.
+
+### 3. Seal a testimony
+
+Generated split-pass mode:
+
 ```bash
 python3 cli/confess.py seal --image cover.jpg --text confession.md --gen-split-pass
 ```
-Flagship path: split mode keeps extraction (`--stego-pass`) and decryption (`--age-pass`) separated.
 
-Outputs:
-- `payload.age`
-- `locked_artifact.jpg`
-- `CSHA` (sha512 of `payload.age`)
-- generated passphrase(s) printed once (if using generated mode)
+Manual split-pass mode:
 
-Split-pass variant (custom secrets):
 ```bash
-python3 cli/confess.py seal --image cover.jpg --text confession.md --age-pass "<AGE_PASS>" --stego-pass "<STEGO_PASS>"
+python3 cli/confess.py seal --image cover.jpg --text confession.md --split-pass-prompt
 ```
-Use this when you want to share extraction capability (`--stego-pass`) without sharing decryption capability (`--age-pass`).
 
-Single-pass variant:
+Single-pass mode:
+
 ```bash
 python3 cli/confess.py seal --image cover.jpg --text confession.md --gen-single-pass
 ```
 
-### 4) Create an ArDrive destination (example)
+Typical outputs:
+
+- `payload.age`
+- `locked_artifact.jpg`
+- `CSHA`
+
+### 4. Create or identify an ArDrive destination
+
+Example:
+
 ```bash
 ardrive create-drive --wallet-file /path/to/wallet.json --drive-name "CONFESSIONS"
 ```
-ArDrive does not print a field literally named `folder-id`.
-For `confess.py push --folder-id`, use:
-- `created[].entityId` where `created[].type == "folder"` (UUID)
-- Not `metadataTxId`, `bundleTxId`, or the `entityId` where `type == "drive"`
 
-If your `create-drive` output includes:
-```json
-{
-  "type": "folder",
-  "entityId": "e77a0859-0d12-43d3-bcf7-03d17930c087"
-}
-```
-Then the folder id to pass is:
-`e77a0859-0d12-43d3-bcf7-03d17930c087`
+For `confess.py push --folder-id`, use the folder `entityId` from the `created[]` item where `type == "folder"`.
 
-If the drive/folder already exists and you no longer have the folder `entityId` saved:
-```bash
-# List your drives, then copy the target driveId
-ardrive list-all-drives --wallet-file /path/to/wallet.json
+Do not use:
 
-# List all folders/files in that drive and copy the folder entityId you want
-ardrive list-drive --wallet-file /path/to/wallet.json --drive-id <DRIVE_ID> --all
-```
-For private drives/folders, add `--private` (or provide `--drive-key`).
-Use that folder `entityId` as `--folder-id` in `confess.py push`.
+- the drive `entityId`
+- `metadataTxId`
+- `bundleTxId`
 
-### 5) Upload to Arweave via ArDrive
+If the drive already exists and the folder `entityId` is not saved, list the drive contents and reuse the target folder `entityId`.
+
+### 5. Upload the locked artifact
+
 ```bash
 python3 cli/confess.py push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ENTITY_ID>
 ```
+
 Outputs:
+
 - Arweave TXID
 - `https://arweave.net/<TXID>`
 
-### 6) Generate base calldata
+### 6. Generate Base calldata
+
 ```bash
 python3 cli/confess.py mint --title "Proof of Omertà" --txid <ARWEAVE_TXID> --csha <CSHA_SHA512>
 ```
-This prints a hex string for transaction input data.
 
-Optional public extraction key broadcast:
+Optional public extraction:
+
 ```bash
 python3 cli/confess.py mint --title "Proof of Omertà" --txid <ARWEAVE_TXID> --csha <CSHA_SHA512> --steg "<STEGO_PASS>"
 ```
-Use only if you intentionally want extraction access to be public on-chain.
 
-You broadcast manually from an EVM wallet that supports native calldata input.
-Recommended wallet: **Rabby** (power-user features, pre-send simulation including calldata, open source).
-- Network: base
-- Send: 0 ETH
-- To: null address or self
-- Data: paste the hex calldata
+Publishing `STEG` makes extraction of `payload.age` public. Keep it private unless public extraction is intentional.
 
-**Metadata label format (example):**
-```
-Proof of Omertà | ARTXID:<TXID> | CSHA:<SHA512>
-Proof of Omertà | ARTXID:<TXID> | CSHA:<SHA512> | STEG:<STEGO_PASS>
-```
+`mint` prints:
 
-Why `|` delimiters:
-- This keeps the label human-readable (like catalog metadata) and machine-parsable with stable field boundaries.
+- the metadata string
+- the `0x...` calldata to paste into the transaction input field
 
----
+Manual broadcast settings:
 
-## Command reference
+- network: Base
+- send: `0 ETH`
+- to: null address or self
+- data: paste the printed calldata
 
-- `python3 cli/confess.py --help` — prints expanded help for all subcommands and flags
-- `doctor` — dependency checks + install hints
-- `init` — store wallet path; attempts address/balance lookup when possible
-- `seal` — create `payload.age`, embed into image, output `CSHA`  
-  Password options: `--age-pass` + `--stego-pass` / `--gen-split-pass` (split mode), or
-  `--single-pass` / `--gen-single-pass` (single mode)
-- `push` — upload locked artifact through ArDrive (`--folder-id` = `created[].entityId` where `type == "folder"`)
-- `mint` — generate Base calldata (manual broadcast). Optional: `--steg` to publish stego extraction password
-- `extract` — recover `payload.age` from a locked artifact (requires `--single-pass` or `--stego-pass`)
-- `verify` — check `sha512(payload.age)` vs expected `CSHA`
+## Verification
 
----
+### Browser verifier
 
-## Verification flow
+Use the public verifier:
 
-Public readout (metadata + instructions):
-- **https://confessionstxt.art/verify**
-  - base tx hash: resolves protocol metadata (`ARTXID`, `CSHA`, optional `STEG`)
+**https://confessionstxt.art/verify**
 
-Local verification (operator):
+It resolves:
+
+- Base transaction metadata
+- linked Arweave artifact
+- image preview and protocol record
+
+### Local verification
+
+Extract the encrypted payload:
+
 ```bash
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "..."
+python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
+```
+
+Verify the checksum:
+
+```bash
 python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
 ```
 
-Optional local decryption:
+Decrypt after a successful checksum match:
+
 ```bash
-age --decrypt --output payload.tar.gz payload.age
-tar -xzf payload.tar.gz
+python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512> --decrypt --age-pass-prompt
 ```
 
----
+## Command reference
 
-## Active exploration
-
-- Post-quantum compatibility: evaluate how age ecosystem options for PQ-style key exchange can map cleanly onto this protocol.
-- Payload range and scale: expand beyond plaintext to additional document/media types (for example PDF and JPEG inputs) and add compression for longer texts when HStego capacity becomes the bottleneck.
-
----
+- `python3 cli/confess.py --help` - print expanded help for all subcommands
+- `doctor` - check dependencies and print install hints
+- `init` - store Arweave wallet path and attempt address/balance lookup
+- `seal` - package, encrypt, and embed a testimony file
+- `push` - upload a locked artifact through ArDrive
+- `mint` - generate Base calldata from title, TXID, and CSHA
+- `extract` - recover `payload.age` from a locked artifact
+- `verify` - compare `payload.age` against `CSHA` and optionally decrypt
 
 ## Operational notes
 
-- Store passphrases securely. Consider Shamir splitting (`ssss-split`) for redundancy.
-- If using split mode, treat `--age-pass` as strictly higher sensitivity than `--stego-pass`.
-- First HStego run may be slow due to native build/JIT overhead.
-- Embedding capacity depends on cover image properties; if payload is too large, use a larger cover image or smaller payload.
-
----
-
-**CripTech**
+- `.confess/config.json` is local configuration and should remain out of version control.
+- Prefer `--*-prompt` flags for manual secrets. Literal passphrase flags can be visible in shell history and process lists.
+- Commands refuse to overwrite generated outputs unless `--force` is supplied.
+- First HStego runs can be slow because of native build and JIT overhead.
+- If embedding fails, use a larger cover image or reduce payload size.
+- If `STEG` is published, anyone can extract `payload.age` from the public artifact, but plaintext still requires the `age` passphrase.
+- The website verifier is static and does not require a backend.

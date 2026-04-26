@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import base64
 from contextlib import contextmanager
+import getpass
 import hashlib
 import json
 import os
@@ -30,6 +31,8 @@ CONFIG_DIR = Path(".confess")
 CONFIG_PATH = CONFIG_DIR / "config.json"
 ARWEAVE_URL_PREFIX = "https://arweave.net/"
 WINSTON_PER_AR = 1_000_000_000_000
+ARWEAVE_TXID_RE = re.compile(r"^[a-zA-Z0-9_-]{43}$")
+CSHA_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 
 
 def _err(msg: str) -> None:
@@ -69,6 +72,50 @@ def _sha512_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _validate_arweave_txid(value: str) -> bool:
+    return bool(ARWEAVE_TXID_RE.fullmatch(value.strip()))
+
+
+def _validate_csha(value: str) -> bool:
+    return bool(CSHA_RE.fullmatch(value.strip()))
+
+
+def _prompt_secret(label: str, confirm: bool = False) -> str:
+    secret = getpass.getpass(f"{label}: ")
+    if not secret:
+        raise RuntimeError(f"{label} cannot be empty.")
+    if confirm:
+        repeated = getpass.getpass(f"Confirm {label}: ")
+        if repeated != secret:
+            raise RuntimeError(f"{label} values did not match.")
+    return secret
+
+
+def _remove_existing(path: Path, force: bool, label: str) -> None:
+    if not path.exists():
+        return
+    if not force:
+        raise RuntimeError(f"{label} already exists: {path}. Use --force to overwrite.")
+    if path.is_dir():
+        raise RuntimeError(f"{label} is a directory and cannot be overwritten: {path}")
+    path.unlink()
+
+
+def _write_payload_tar(text_path: Path, payload_tar: Path) -> None:
+    stat = text_path.stat()
+    info = tarfile.TarInfo(name=text_path.name)
+    info.size = stat.st_size
+    info.mode = 0o600
+    info.mtime = 0
+    info.uid = 0
+    info.gid = 0
+    info.uname = ""
+    info.gname = ""
+    with tarfile.open(payload_tar, "w:gz") as tar:
+        with text_path.open("rb") as f:
+            tar.addfile(info, f)
 
 
 def _base64url_decode(data: str) -> bytes:
@@ -245,7 +292,7 @@ def _doctor() -> int:
             warnings.append(
                 "Apple Silicon detected. Use scripts/install_hstego_mac.sh (patches SSE intrinsics via sse2neon)."
             )
-        if _which("python3.12") is None:
+        if sys.version_info[:2] != (3, 12) and _which("python3.12") is None:
             warnings.append("python3.12 not on PATH. Use: $(brew --prefix python@3.12)/bin/python3.12")
         jpeg_header = _find_jpeglib_header()
         print(
@@ -341,20 +388,22 @@ def _looks_like_age_ciphertext(path: Path) -> bool:
 
 def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
     single_pass = args.single_pass
+    single_prompt = args.single_pass_prompt
     generated_single = args.gen_single_pass
     age_pass = args.age_pass
     stego_pass = args.stego_pass
+    split_prompt = args.split_pass_prompt
     generated_split = args.gen_split_pass
 
-    single_mode_count = int(bool(single_pass)) + int(bool(generated_single))
+    single_mode_count = int(bool(single_pass)) + int(bool(single_prompt)) + int(bool(generated_single))
     split_manual_any = bool(age_pass) or bool(stego_pass)
-    split_mode_count = int(bool(generated_split)) + int(bool(split_manual_any))
+    split_mode_count = int(bool(generated_split)) + int(bool(split_prompt)) + int(bool(split_manual_any))
 
     if single_mode_count > 1:
-        raise RuntimeError("Choose only one single-pass option: --single-pass or --gen-single-pass.")
+        raise RuntimeError("Choose only one single-pass option: --single-pass, --single-pass-prompt, or --gen-single-pass.")
 
     if split_mode_count > 1:
-        raise RuntimeError("Choose only one split-pass option: --gen-split-pass or --age-pass + --stego-pass.")
+        raise RuntimeError("Choose only one split-pass option: --gen-split-pass, --split-pass-prompt, or --age-pass + --stego-pass.")
 
     if single_mode_count and split_mode_count:
         raise RuntimeError(
@@ -368,8 +417,17 @@ def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
     if single_pass:
         return single_pass, single_pass, "single"
 
+    if single_prompt:
+        prompted_pass = _prompt_secret("Single passphrase", confirm=True)
+        return prompted_pass, prompted_pass, "single-prompt"
+
     if generated_split:
         return _generate_passphrase(), _generate_passphrase(), "split-generated"
+
+    if split_prompt:
+        prompted_age_pass = _prompt_secret("AGE passphrase", confirm=True)
+        prompted_stego_pass = _prompt_secret("STEGO passphrase", confirm=True)
+        return prompted_age_pass, prompted_stego_pass, "split-prompt"
 
     if split_manual_any:
         if not age_pass or not stego_pass:
@@ -377,7 +435,7 @@ def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
         return age_pass, stego_pass, "split"
 
     raise RuntimeError(
-        "Password options required: use --single-pass, --gen-single-pass, --gen-split-pass, or --age-pass + --stego-pass."
+        "Password options required: use --single-pass-prompt, --gen-single-pass, --gen-split-pass, --split-pass-prompt, or explicit pass flags."
     )
 
 
@@ -565,19 +623,23 @@ def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
     hstegolib = _load_hstegolib()
     invalid_secret_msg = "HStego extract failed: wrong stego password (or no embedded payload)."
 
-    def _extract_with_suppressed_output(stego_obj) -> None:
-        with _suppress_native_output():
-            stego_obj.extract(str(stego_image), password, str(output))
+    def _extract(stego_obj) -> None:
+        stego_obj.extract(str(stego_image), password, str(output))
 
     try:
-        if _is_spatial_image(stego_image, hstegolib):
-            stego = hstegolib.S_UNIWARD()
-            _with_heartbeat("HStego extract", lambda: _extract_with_suppressed_output(stego))
-        elif _is_jpeg_image(stego_image):
-            stego = hstegolib.J_UNIWARD()
-            _with_heartbeat("HStego extract", lambda: _extract_with_suppressed_output(stego))
-        else:
-            raise RuntimeError("Stego image format not supported (use .jpg or .png).")
+        with _suppress_native_output():
+            stego = None
+            try:
+                if _is_spatial_image(stego_image, hstegolib):
+                    stego = hstegolib.S_UNIWARD()
+                    _with_heartbeat("HStego extract", lambda: _extract(stego))
+                elif _is_jpeg_image(stego_image):
+                    stego = hstegolib.J_UNIWARD()
+                    _with_heartbeat("HStego extract", lambda: _extract(stego))
+                else:
+                    raise RuntimeError("Stego image format not supported (use .jpg or .png).")
+            finally:
+                stego = None
     except SystemExit:
         raise RuntimeError(invalid_secret_msg)
     except Exception as e:
@@ -602,6 +664,9 @@ def _seal(args: argparse.Namespace) -> int:
     if not text_path.exists():
         _err(f"Testimony file not found: {text_path}")
         return 1
+    if not text_path.is_file():
+        _err(f"Testimony path is not a regular file: {text_path}")
+        return 1
 
     # Fail fast before encryption so we do not leave a fresh payload.age
     # when HStego is unavailable (e.g., outside the project virtualenv).
@@ -615,13 +680,15 @@ def _seal(args: argparse.Namespace) -> int:
     payload_age = Path("payload.age")
     output_image = Path(args.out or "locked_artifact.jpg")
 
-    if payload_tar.exists():
-        payload_tar.unlink()
-    if payload_age.exists():
-        payload_age.unlink()
+    try:
+        _remove_existing(payload_tar, args.force, "Temporary archive")
+        _remove_existing(payload_age, args.force, "Payload file")
+        _remove_existing(output_image, args.force, "Locked artifact")
+    except RuntimeError as e:
+        _err(str(e))
+        return 1
 
-    with tarfile.open(payload_tar, "w:gz") as tar:
-        tar.add(text_path, arcname=text_path.name)
+    _write_payload_tar(text_path, payload_tar)
 
     if pass_mode == "single-generated":
         print("Password mode: single (--gen-single-pass).")
@@ -637,8 +704,15 @@ def _seal(args: argparse.Namespace) -> int:
         print("Store both securely. Share only stego-pass if delegating extraction-only verification.")
     elif pass_mode == "single":
         print("Password mode: single (--single-pass).")
+        print("Warning: passphrase flags can be visible in shell history and process lists. Prefer --single-pass-prompt for manual use.")
+    elif pass_mode == "single-prompt":
+        print("Password mode: single (--single-pass-prompt).")
+    elif pass_mode == "split-prompt":
+        print("Password mode: split (--split-pass-prompt).")
+        print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
     else:
         print("Password mode: split (--age-pass + --stego-pass).")
+        print("Warning: passphrase flags can be visible in shell history and process lists. Prefer --split-pass-prompt for manual use.")
         print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
 
     try:
@@ -766,12 +840,21 @@ def _mint(args: argparse.Namespace) -> int:
     if "|" in args.txid or "\n" in args.txid:
         _err("TXID cannot include '|' or newlines.")
         return 1
+    txid = args.txid.strip()
+    if not _validate_arweave_txid(txid):
+        _err("--txid must be a 43-character Arweave transaction id.")
+        return 1
+
+    csha = args.csha.strip().lower()
+    if not _validate_csha(csha):
+        _err("--csha must be a 128-character hex sha512 value.")
+        return 1
 
     if args.steg and ("|" in args.steg or "\n" in args.steg):
         _err("STEG cannot include '|' or newlines.")
         return 1
 
-    metadata_parts = [title, f"ARTXID:{args.txid}", f"CSHA:{args.csha}"]
+    metadata_parts = [title, f"ARTXID:{txid}", f"CSHA:{csha}"]
     if args.steg:
         metadata_parts.append(f"STEG:{args.steg}")
     metadata = " | ".join(metadata_parts)
@@ -799,13 +882,17 @@ def _extract(args: argparse.Namespace) -> int:
         return 1
 
     output_path = Path(args.out or "payload.age").expanduser()
-    password = args.single_pass or args.stego_pass
-    if output_path.exists():
-        try:
-            output_path.unlink()
-        except OSError as e:
-            _err(f"Cannot overwrite output path {output_path}: {e}")
-            return 1
+    try:
+        if args.single_pass_prompt:
+            password = _prompt_secret("Single passphrase")
+        elif args.stego_pass_prompt:
+            password = _prompt_secret("STEGO passphrase")
+        else:
+            password = args.single_pass or args.stego_pass
+        _remove_existing(output_path, args.force, "Output payload")
+    except RuntimeError as e:
+        _err(str(e))
+        return 1
 
     try:
         _hstego_extract(stego_image, output_path, password)
@@ -828,11 +915,11 @@ def _verify(args: argparse.Namespace) -> int:
         _err(f"Payload file not found: {payload_path}")
         return 1
 
-    actual = _sha512_file(payload_path)
-    expected = args.csha.lower()
-    if not re.fullmatch(r"[0-9a-f]{128}", expected):
+    expected = args.csha.strip().lower()
+    if not _validate_csha(expected):
         _err("--csha must be a 128-character hex sha512 value.")
         return 1
+    actual = _sha512_file(payload_path)
 
     print(f"Expected CSHA: {expected}")
     print(f"Actual CSHA:   {actual}")
@@ -844,12 +931,18 @@ def _verify(args: argparse.Namespace) -> int:
         if not ok:
             _err("Refusing to decrypt because CSHA does not match.")
             return 1
-        decrypt_pass = args.single_pass or args.age_pass
-        if not decrypt_pass:
-            _err("--decrypt requires --single-pass (single mode) or --age-pass (split mode).")
-            return 1
         output_path = Path(args.out or "payload.tar.gz").expanduser()
         try:
+            if args.single_pass_prompt:
+                decrypt_pass = _prompt_secret("Single passphrase")
+            elif args.age_pass_prompt:
+                decrypt_pass = _prompt_secret("AGE passphrase")
+            else:
+                decrypt_pass = args.single_pass or args.age_pass
+            if not decrypt_pass:
+                _err("--decrypt requires --single-pass-prompt, --age-pass-prompt, --single-pass, or --age-pass.")
+                return 1
+            _remove_existing(output_path, args.force, "Decrypted output")
             _age_decrypt(payload_path, output_path, decrypt_pass)
         except RuntimeError as e:
             if output_path.exists():
@@ -879,6 +972,7 @@ def _build_parser() -> argparse.ArgumentParser:
     seal.add_argument("--image", required=True, help="Cover image (jpg/png)")
     seal.add_argument("--text", required=True, help="Testimony file (.md/.txt/etc)")
     seal.add_argument("--out", help="Output locked artifact jpg")
+    seal.add_argument("--force", action="store_true", help="Overwrite payload.age, payload.tar.gz, or output artifact if present")
     seal.add_argument(
         "--algo",
         default="auto",
@@ -889,6 +983,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--single-pass",
         dest="single_pass",
         help="Single-mode: one passphrase used for both age encryption and stego embedding",
+    )
+    seal.add_argument(
+        "--single-pass-prompt",
+        action="store_true",
+        help="Single-mode: prompt securely for one passphrase instead of passing it as an argument",
     )
     seal.add_argument(
         "--gen-single-pass",
@@ -902,6 +1001,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     seal.add_argument("--age-pass", help="Split mode: passphrase for age encryption (requires --stego-pass)")
     seal.add_argument("--stego-pass", help="Split mode: password for stego embedding (requires --age-pass)")
+    seal.add_argument(
+        "--split-pass-prompt",
+        action="store_true",
+        help="Split-mode: prompt securely for age and stego passphrases instead of passing them as arguments",
+    )
 
     push = sub.add_parser("push", help="Upload locked artifact to Arweave via ArDrive")
     push.add_argument("--file", required=True, help="Locked artifact jpg")
@@ -920,18 +1024,24 @@ def _build_parser() -> argparse.ArgumentParser:
     extract = sub.add_parser("extract", help="Extract payload.age from a locked artifact")
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
     extract.add_argument("--out", help="Output payload path (default payload.age)")
+    extract.add_argument("--force", action="store_true", help="Overwrite output payload if present")
     extract_group = extract.add_mutually_exclusive_group(required=True)
     extract_group.add_argument("--single-pass", dest="single_pass", help="Single-mode passphrase (same secret used for age + stego)")
     extract_group.add_argument("--stego-pass", help="Split-mode stego password")
+    extract_group.add_argument("--single-pass-prompt", action="store_true", help="Prompt securely for single-mode passphrase")
+    extract_group.add_argument("--stego-pass-prompt", action="store_true", help="Prompt securely for split-mode stego passphrase")
 
     verify = sub.add_parser("verify", help="Verify payload hash and optionally decrypt")
     verify.add_argument("--file", help="payload.age path (default payload.age)")
     verify.add_argument("--csha", required=True, help="Expected CSHA (sha512)")
     verify.add_argument("--decrypt", action="store_true", help="Decrypt payload.age -> payload.tar.gz")
     verify.add_argument("--out", help="Decrypted output path (default payload.tar.gz)")
+    verify.add_argument("--force", action="store_true", help="Overwrite decrypted output if present")
     verify_pass_group = verify.add_mutually_exclusive_group(required=False)
     verify_pass_group.add_argument("--single-pass", dest="single_pass", help="Single-mode passphrase for decryption")
     verify_pass_group.add_argument("--age-pass", help="Split-mode age passphrase for decryption")
+    verify_pass_group.add_argument("--single-pass-prompt", action="store_true", help="Prompt securely for single-mode passphrase")
+    verify_pass_group.add_argument("--age-pass-prompt", action="store_true", help="Prompt securely for split-mode age passphrase")
 
     return parser
 
