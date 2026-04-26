@@ -1,1 +1,1 @@
-/verify/:locator /verify/index.html 200
+/verify/:locator /verify.html 200
