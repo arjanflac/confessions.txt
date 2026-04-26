@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="referrer" content="no-referrer" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#09090b" />
@@ -43,8 +44,8 @@
         }
       }
     </script>
-    <link rel="icon" href="logo.png" type="image/png" />
-    <link rel="stylesheet" href="brand-fonts.css" />
+    <link rel="icon" href="/logo.png" type="image/png" />
+    <link rel="stylesheet" href="/brand-fonts.css" />
     <style>
       :root {
         --bg: #09090b;
@@ -104,10 +105,6 @@
         overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
-      }
-
-      body::before {
-        content: none;
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -215,8 +212,7 @@
         background: rgba(255, 255, 255, 0.02);
       }
 
-      .revision-line,
-      .case-line {
+      .revision-line {
         font-family: var(--font-tech);
         font-size: 0.68rem;
         font-weight: 600;
@@ -510,13 +506,6 @@
         margin: 0 auto;
       }
 
-      .record-summary {
-        color: var(--text-2);
-        font-size: 0.98rem;
-        line-height: 1.72;
-        max-width: 68rem;
-      }
-
       .record-layout {
         display: grid;
         grid-template-columns: minmax(0, 32.75rem) minmax(17.5rem, 20.25rem);
@@ -525,12 +514,11 @@
         align-items: start;
       }
 
-      .artifact-panel,
-      .record-panel {
+      .artifact-panel {
         min-width: 0;
       }
 
-      .artifact-panel {
+      .record-panel {
         min-width: 0;
       }
 
@@ -943,7 +931,7 @@
         </div>
         <div class="masthead-main">
           <div class="logo-frame">
-            <img src="logo.png" alt="" />
+            <img src="/logo.png" alt="" />
           </div>
           <div class="title-group">
             <h1 class="sr-only">Verify</h1>
@@ -974,10 +962,10 @@
         <div class="console-empty">awaiting locator</div>
       </section>
 
-      <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener">@arjan.flac</a></footer>
+      <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener noreferrer">@arjan.flac</a></footer>
     </main>
 
-    <script src="page-transition.js"></script>
+    <script src="/page-transition.js"></script>
     <script>
       const consoleEl = document.getElementById("console");
       const inputEl = document.getElementById("input");
@@ -1134,7 +1122,7 @@
           ? '<button class="copy-btn" data-copy="' + escapeHtml(copyValue) + '" aria-label="Copy ' + escapeHtml(label) + '">Copy</button>'
           : "";
         const valueHtml = isLink
-          ? '<a href="' + escapeHtml(value) + '" target="_blank" rel="noopener">' + escapeHtml(value) + "</a>"
+          ? '<a href="' + escapeHtml(value) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(value) + "</a>"
           : escapeHtml(value);
         const monoClass = mono ? " mono" : "";
         const extraHtml = extra ? '<div class="data-value subtle">' + escapeHtml(extra) + "</div>" : "";
@@ -1206,7 +1194,6 @@
         const canonicalUrl = options.canonicalUrl;
         const proofValue = options.proofValue;
         const stegValue = options.stegValue;
-        const rawMetadata = options.rawMetadata;
         const commands = options.commands;
         const statusText = options.statusText;
         const statusType = options.statusType || "verified";
@@ -1398,10 +1385,6 @@
           });
           document.body.dataset.statusTooltipBound = "1";
         }
-      }
-
-      function scrollConsoleIntoView() {
-        return;
       }
 
       function readImageDimensions(objectUrl) {
@@ -1615,7 +1598,7 @@
             '<div class="record-shell">' +
               '<div class="record-layout">' +
                 '<section class="artifact-panel">' +
-                  '<div class="artifact-topline"><span class="panel-label">Artifact</span><span class="panel-label">Loading</span></div>' +
+                  '<div class="record-topline"><span class="panel-label">Artifact</span><span class="panel-label">Loading</span></div>' +
                   '<div class="artifact-stage"><div class="artifact-frame"><div class="artifact-image-wrap"><div class="artifact-placeholder">Preparing artifact view</div></div><div class="artifact-caption"><div class="artifact-title">Resolution in progress</div><div class="artifact-meta">Awaiting artifact data</div><p class="artifact-note">The artifact will appear here once retrieval completes.</p></div></div></div>' +
                 "</section>" +
                 '<aside class="record-panel"><section class="record-card"><div class="record-topline"><span class="panel-label">Catalog Record</span><span class="panel-label">Loading</span></div><div class="record-body"><div class="data-grid">' +
@@ -1650,7 +1633,7 @@
           activePreviewObjectUrl = preview.objectUrl;
         }
 
-        const commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + canonicalUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\npython3 cli/confess.py extract --image locked_artifact.jpg --stego-pass \"<STEGO_PASS>\"\n\n# Verify checksum (if known)\npython3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>";
+        const commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + canonicalUrl + "\"\n\n# Extract payload (requires HStego or confess CLI)\npython3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt\n\n# Verify checksum (if known)\npython3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>";
         renderResolvedRecord({
           statusText: "Artifact Located",
           statusType: "verified",
@@ -1661,16 +1644,14 @@
           canonicalUrl: canonicalUrl,
           proofValue: null,
           stegValue: null,
-          rawMetadata: null,
           commands: commands,
           preview: preview,
           previewError: previewError
         });
-        scrollConsoleIntoView();
       }
 
       async function verifyTx(txHash) {
-          renderLoading("Querying Ledger", "Decoding the published label.");
+        renderLoading("Querying Ledger", "Decoding the published label.");
 
         try {
           const payload = {
@@ -1737,7 +1718,7 @@
           const cshaValue = /^[a-fA-F0-9]{128}$/.test(proofValue) ? proofValue : "<CSHA_SHA512>";
           const extractCommand = fields.STEG
             ? "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass " + shellQuote(fields.STEG)
-            : 'python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<STEGO_PASS>"';
+            : "python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt";
           const commands = "# Download artifact\ncurl -fL -o locked_artifact.jpg \"" + canonicalUrl + "\"\n\n# Extract payload\n" + extractCommand + "\n\n# Verify checksum\npython3 cli/confess.py verify --file payload.age --csha " + cshaValue;
 
           renderLoading("Fetching Artifact", "Loading the artifact from Arweave.");
@@ -1769,7 +1750,6 @@
             canonicalUrl: canonicalUrl,
             proofValue: proofValue || null,
             stegValue: fields.STEG || null,
-            rawMetadata: rawMetadata,
             commands: commands,
             preview: preview,
             previewError: previewError
@@ -1808,17 +1788,27 @@
         if (event.key === "Enter") handleVerify();
       });
 
+      function getPathLocator() {
+        const path = window.location.pathname.replace(/\/+$/, "");
+        const match = path.match(/^\/verify\/(.+)$/);
+        if (!match) return null;
+        try {
+          return decodeURIComponent(match[1]).trim();
+        } catch (error) {
+          return match[1].trim();
+        }
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const txParam = urlParams.get("tx");
       const txidParam = urlParams.get("txid");
-      if (txParam) {
-        inputEl.value = txParam;
-        handleVerify();
-      } else if (txidParam) {
-        inputEl.value = txidParam;
+      const pathParam = getPathLocator();
+      const initialLocator = txParam || txidParam || pathParam;
+      if (initialLocator) {
+        inputEl.value = initialLocator;
         handleVerify();
       }
     </script>
-    <script type="module" src="pretext-balance.js"></script>
+    <script type="module" src="/pretext-balance.js"></script>
   </body>
 </html>
