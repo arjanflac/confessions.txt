@@ -33,6 +33,7 @@ ARWEAVE_URL_PREFIX = "https://arweave.net/"
 WINSTON_PER_AR = 1_000_000_000_000
 ARWEAVE_TXID_RE = re.compile(r"^[a-zA-Z0-9_-]{43}$")
 CSHA_RE = re.compile(r"^[0-9a-fA-F]{128}$")
+CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def _err(msg: str) -> None:
@@ -62,6 +63,10 @@ def _load_config() -> dict:
 
 def _save_wallet_path(wallet_path: Path) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(CONFIG_DIR, 0o700)
+    except OSError:
+        pass
     data = {"wallet_path": str(wallet_path)}
     CONFIG_PATH.write_text(json.dumps(data, indent=2))
     try:
@@ -97,6 +102,21 @@ def _validate_arweave_txid(value: str) -> bool:
 
 def _validate_csha(value: str) -> bool:
     return bool(CSHA_RE.fullmatch(value.strip()))
+
+
+def _has_control_chars(value: str) -> bool:
+    return bool(CONTROL_CHARS_RE.search(value))
+
+
+def _same_path(left: Path, right: Path) -> bool:
+    try:
+        return left.resolve() == right.resolve()
+    except OSError:
+        return left.absolute() == right.absolute()
+
+
+def _warn_literal_secret_arg(flag: str, prompt_flag: str) -> None:
+    _err(f"Warning: {flag} can be visible in shell history and process lists. Prefer {prompt_flag}.")
 
 
 def _prompt_secret(label: str, confirm: bool = False) -> str:
@@ -783,6 +803,10 @@ def _seal(args: argparse.Namespace) -> int:
     if not text_path.is_file():
         _err(f"Testimony path is not a regular file: {text_path}")
         return 1
+    output_image = Path(args.out or "locked_artifact.jpg").expanduser()
+    if _same_path(output_image, cover):
+        _err("Output artifact path must differ from the cover image. Refusing to overwrite the cover.")
+        return 1
 
     # Fail fast before encryption so we do not leave a fresh payload.age
     # when HStego is unavailable (e.g., outside the project virtualenv).
@@ -794,7 +818,6 @@ def _seal(args: argparse.Namespace) -> int:
 
     payload_tar = Path("payload.tar.gz")
     payload_age = Path("payload.age")
-    output_image = Path(args.out or "locked_artifact.jpg")
 
     try:
         print("Preparing seal workspace...")
@@ -806,7 +829,16 @@ def _seal(args: argparse.Namespace) -> int:
         return 1
 
     print(f"Packing testimony into {payload_tar}...")
-    _write_payload_tar(text_path, payload_tar)
+    try:
+        _write_payload_tar(text_path, payload_tar)
+    except (OSError, tarfile.TarError) as e:
+        if payload_tar.exists():
+            try:
+                payload_tar.unlink()
+            except OSError:
+                pass
+        _err(f"Failed to pack testimony: {e}")
+        return 1
 
     if pass_mode == "single-generated":
         print("Password mode: single (--gen-single-pass).")
@@ -837,6 +869,11 @@ def _seal(args: argparse.Namespace) -> int:
         print(f"Encrypting packed testimony into {payload_age} with age...")
         _age_encrypt(payload_tar, payload_age, age_pass)
     except RuntimeError as e:
+        if payload_age.exists():
+            try:
+                payload_age.unlink()
+            except OSError:
+                pass
         _err(str(e))
         return 1
     finally:
@@ -852,6 +889,11 @@ def _seal(args: argparse.Namespace) -> int:
     try:
         _hstego_embed(cover, payload_age, output_image, stego_pass, args.algo)
     except RuntimeError as e:
+        if output_image.exists():
+            try:
+                output_image.unlink()
+            except OSError:
+                pass
         _err(str(e))
         return 1
 
@@ -898,6 +940,7 @@ def _ardrive_upload(file_path: Path, wallet_path: Path, folder_id: str, dest_nam
     res = _run(cmd)
     if res.returncode != 0:
         detail = res.stderr.strip() or res.stdout.strip()
+        detail = detail.replace(str(wallet_path), "[WALLET_PATH]")
         raise RuntimeError("ArDrive upload failed." + (f" Details: {detail}" if detail else ""))
 
     txid = _extract_ardrive_data_tx(res.stdout + "\n" + res.stderr)
@@ -928,7 +971,7 @@ def _push(args: argparse.Namespace) -> int:
             "ArDrive parent folder id is required. Use the `entityId` from the `created` item where "
             "`type` is `folder` in `ardrive create-drive` output, then pass it via --folder-id."
         )
-        _err("See ardrive-cli-README.md for the create-drive and upload-file examples.")
+        _err("See README.md > Operator Workflow for the create-drive and upload-file examples.")
         return 1
 
     try:
@@ -956,6 +999,9 @@ def _mint(args: argparse.Namespace) -> int:
     if "|" in title or "\n" in title:
         _err("Title cannot include '|' or newlines.")
         return 1
+    if _has_control_chars(title):
+        _err("Title cannot include control characters.")
+        return 1
 
     if "|" in args.txid or "\n" in args.txid:
         _err("TXID cannot include '|' or newlines.")
@@ -970,13 +1016,29 @@ def _mint(args: argparse.Namespace) -> int:
         _err("--csha must be a 128-character hex sha512 value.")
         return 1
 
-    if args.steg and ("|" in args.steg or "\n" in args.steg):
+    if args.steg is not None and args.steg_prompt:
+        _err("Choose either --steg or --steg-prompt, not both.")
+        return 1
+
+    try:
+        steg = _prompt_secret("STEG passphrase to publish", confirm=True) if args.steg_prompt else args.steg
+    except RuntimeError as e:
+        _err(str(e))
+        return 1
+
+    if steg is not None and not steg:
+        _err("STEG cannot be empty.")
+        return 1
+    if steg and ("|" in steg or "\n" in steg):
         _err("STEG cannot include '|' or newlines.")
+        return 1
+    if steg and _has_control_chars(steg):
+        _err("STEG cannot include control characters.")
         return 1
 
     metadata_parts = [title, f"ARTXID:{txid}", f"CSHA:{csha}"]
-    if args.steg:
-        metadata_parts.append(f"STEG:{args.steg}")
+    if steg:
+        metadata_parts.append(f"STEG:{steg}")
     metadata = " | ".join(metadata_parts)
     data_hex = "0x" + metadata.encode("utf-8").hex()
 
@@ -984,14 +1046,17 @@ def _mint(args: argparse.Namespace) -> int:
     print(metadata)
     print("\nHex (paste into tx input data):")
     print(data_hex)
-    print("\nManual broadcast (Phantom/MetaMask):")
+    print("\nManual broadcast:")
     print("  Network: Base")
+    print("  Wallet: Rabby recommended")
     print("  Send: 0 ETH")
     print("  To: null address (0x0000000000000000000000000000000000000000) or self")
     print("  Data field: paste 0x... above")
-    if args.steg:
+    if steg:
         print("\nNote:")
         print("  STEG is public on-chain when included. Anyone can extract payload.age from the locked artifact.")
+        if args.steg:
+            print("  Warning: --steg can be visible in shell history and process lists. Prefer --steg-prompt.")
     return 0
 
 
@@ -1009,6 +1074,10 @@ def _extract(args: argparse.Namespace) -> int:
             password = _prompt_secret("STEGO passphrase")
         else:
             password = args.single_pass or args.stego_pass
+            if args.single_pass:
+                _warn_literal_secret_arg("--single-pass", "--single-pass-prompt")
+            elif args.stego_pass:
+                _warn_literal_secret_arg("--stego-pass", "--stego-pass-prompt")
         _remove_existing(output_path, args.force, "Output payload")
     except RuntimeError as e:
         _err(str(e))
@@ -1035,6 +1104,14 @@ def _verify(args: argparse.Namespace) -> int:
         _err(f"Payload file not found: {payload_path}")
         return 1
 
+    passphrase_supplied = bool(args.single_pass or args.age_pass or args.single_pass_prompt or args.age_pass_prompt)
+    if not args.decrypt and passphrase_supplied:
+        _err("Passphrase options only apply with --decrypt. Omit the passphrase for checksum-only verification.")
+        return 1
+    if not args.decrypt and args.out:
+        _err("--out only applies with --decrypt.")
+        return 1
+
     expected = args.csha.strip().lower()
     if not _validate_csha(expected):
         _err("--csha must be a 128-character hex sha512 value.")
@@ -1059,6 +1136,10 @@ def _verify(args: argparse.Namespace) -> int:
                 decrypt_pass = _prompt_secret("AGE passphrase")
             else:
                 decrypt_pass = args.single_pass or args.age_pass
+                if args.single_pass:
+                    _warn_literal_secret_arg("--single-pass", "--single-pass-prompt")
+                elif args.age_pass:
+                    _warn_literal_secret_arg("--age-pass", "--age-pass-prompt")
             if not decrypt_pass:
                 _err("--decrypt requires --single-pass-prompt, --age-pass-prompt, --single-pass, or --age-pass.")
                 return 1
@@ -1080,7 +1161,7 @@ def _verify(args: argparse.Namespace) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="confess",
-        description="Local-first cryptographic archiving tool (R&D).",
+        description="Local-first terminal protocol for sealed testimony artifacts.",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -1140,6 +1221,7 @@ def _build_parser() -> argparse.ArgumentParser:
     mint.add_argument("--csha", required=True, help="CSHA (sha512 of payload.age)")
     mint.add_argument("--title", required=True, help="Title")
     mint.add_argument("--steg", help="Optional: publish stego pass as STEG:<value> in metadata")
+    mint.add_argument("--steg-prompt", action="store_true", help="Prompt securely for a STEG value to publish")
 
     extract = sub.add_parser("extract", help="Extract payload.age from a locked artifact")
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
