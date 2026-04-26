@@ -125,18 +125,11 @@ python3 cli/confess.py doctor
 ### macOS
 
 ```bash
-xcode-select --install
-brew install python@3.12 age jpeg
-
-$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv
+bash scripts/bootstrap_mac.sh
 source .venv/bin/activate
-python -m pip install --upgrade pip
-
-python -m pip install imageio numpy scipy pycryptodome numba Pillow
-bash scripts/install_hstego_mac.sh
-
-npm install -g ardrive-cli
 ```
+
+The bootstrap script installs Homebrew prerequisites, creates `.venv`, installs Python/HStego dependencies, and runs `doctor`. If `ardrive-cli` is missing, it offers to install it with npm.
 
 ### Ubuntu
 
@@ -301,7 +294,8 @@ python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512> --decrypt 
 - `.confess/config.json` is local configuration and should remain out of version control.
 - Prefer `--*-prompt` flags for manual secrets. Literal passphrase flags can be visible in shell history and process lists.
 - Commands refuse to overwrite generated outputs unless `--force` is supplied.
-- First HStego runs can be slow because of native build and JIT overhead.
-- If embedding fails, use a larger cover image or reduce payload size.
+- First HStego runs can be slow because of native build and JIT overhead. The CLI prints 15-second progress updates during embedding.
+- The CLI reports HStego payload budget before embedding. A detectability warning means the artifact can still be created, but statistical concealment is weaker. Confidentiality still comes from `age`.
+- If embedding fails, use a larger or more detailed cover image, or reduce payload size.
 - If `STEG` is published, anyone can extract `payload.age` from the public artifact, but plaintext still requires the `age` passphrase.
 - The website verifier is static and does not require a backend.

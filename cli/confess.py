@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import getpass
 import hashlib
 import json
@@ -36,7 +36,11 @@ CSHA_RE = re.compile(r"^[0-9a-fA-F]{128}$")
 
 
 def _err(msg: str) -> None:
-    print(msg, file=sys.stderr)
+    try:
+        sys.stdout.flush()
+    except OSError:
+        pass
+    print(msg, file=sys.stderr, flush=True)
 
 
 def _run(cmd: list[str], env: Optional[dict] = None) -> subprocess.CompletedProcess:
@@ -72,6 +76,19 @@ def _sha512_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _format_bytes(size: int) -> str:
+    if size < 1024:
+        return f"{size} B"
+    units = ("KB", "MB", "GB")
+    value = size / 1024
+    unit = units[0]
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            break
+        value /= 1024
+    return f"{value:.1f} {unit}" if value < 100 else f"{value:.0f} {unit}"
 
 
 def _validate_arweave_txid(value: str) -> bool:
@@ -159,13 +176,9 @@ def _format_ar_from_winston(winston: int) -> str:
 def _print_install_hints() -> None:
     print("Quick setup:")
     print("  macOS:")
-    print("    xcode-select --install")
-    print("    brew install python@3.12 age jpeg")
-    print("    $(brew --prefix python@3.12)/bin/python3.12 -m venv .venv && source .venv/bin/activate")
-    print("    python -m pip install --upgrade pip")
-    print("    python -m pip install imageio numpy scipy pycryptodome numba Pillow")
-    print("    ./scripts/install_hstego_mac.sh")
-    print("    npm install -g ardrive-cli")
+    print("    bash scripts/bootstrap_mac.sh")
+    print("    source .venv/bin/activate")
+    print("    python cli/confess.py doctor")
     print("  Ubuntu:")
     print("    sudo apt-get update && sudo apt-get install -y age python3-pip build-essential libjpeg-dev python3-tk")
     print("    python3 -m pip install imageio numpy scipy pycryptodome numba Pillow")
@@ -288,7 +301,7 @@ def _doctor() -> int:
         )
         if not clt_ok:
             warnings.append("Install Xcode Command Line Tools: xcode-select --install")
-        if arch == "arm64":
+        if arch == "arm64" and not hstego_ok:
             warnings.append(
                 "Apple Silicon detected. Use scripts/install_hstego_mac.sh (patches SSE intrinsics via sse2neon)."
             )
@@ -384,6 +397,89 @@ def _looks_like_age_ciphertext(path: Path) -> bool:
     except OSError:
         return False
     return head.startswith(b"age-encryption.org/v1")
+
+
+def _hstego_wrapped_payload_size(payload: Path) -> int:
+    # HStego encrypts the already-age-encrypted payload again before embedding:
+    # 16-byte salt + 16-byte IV + AES-CBC padded payload.
+    size = payload.stat().st_size
+    return 32 + ((size // 16) + 1) * 16
+
+
+def _hstego_capacity(cover: Path, hstegolib, algo: str) -> int:
+    max_payload = getattr(hstegolib, "MAX_PAYLOAD", 0.05)
+    if algo == "j-uniward":
+        jpg = hstegolib.jpeg_load(str(cover))
+        return sum(int((hstegolib.np.count_nonzero(channel) * max_payload) / 8) for channel in jpg["coef_arrays"])
+
+    try:
+        import imageio.v2 as imageio  # type: ignore
+    except Exception:
+        import imageio  # type: ignore
+
+    image = imageio.imread(str(cover))
+    pixels = 1
+    for dimension in image.shape:
+        pixels *= int(dimension)
+    return int((pixels * max_payload) / 8)
+
+
+def _print_embed_preflight(cover: Path, payload: Path, hstegolib, algo: str) -> None:
+    payload_size = payload.stat().st_size
+    wrapped_size = _hstego_wrapped_payload_size(payload)
+    capacity = _hstego_capacity(cover, hstegolib, algo)
+    usage = wrapped_size / capacity if capacity else 1
+
+    print("HStego preflight:")
+    print(f"  Cover image: {cover} ({_format_bytes(cover.stat().st_size)})")
+    print(f"  Encrypted payload: {_format_bytes(payload_size)}")
+    print(f"  Embedded payload budget: {_format_bytes(capacity)}")
+    print(f"  Estimated payload use: {usage:.1%} of HStego's conservative budget")
+
+    if wrapped_size > capacity:
+        raise RuntimeError(
+            "Encrypted payload is too large for this cover image. "
+            f"HStego needs about {_format_bytes(wrapped_size)}, but this cover's budget is {_format_bytes(capacity)}. "
+            "Use a larger or more detailed cover image, or reduce the testimony size."
+        )
+
+    if usage >= 0.75:
+        print("")
+        print("Stego detectability warning:")
+        print("  Payload use is high for this cover. The artifact may still be created,")
+        print("  but statistical concealment is weaker and stego-analysis may be easier.")
+        print("  Confidentiality still comes from age encryption. For lower detectability,")
+        print("  use a larger or more detailed cover image, or shorten the testimony.")
+    elif usage >= 0.5:
+        print("")
+        print("Stego detectability note:")
+        print("  Payload use is moderate. The artifact can be created, but a larger or")
+        print("  more detailed cover image gives HStego more room to hide changes.")
+
+
+def _quiet_juniward_cost_debug(stego_obj, hstegolib) -> None:
+    def _quiet_cost_polarization(rho, coeffs, spatial, quant):
+        m = 0.65
+        precover = hstegolib.scipy.signal.wiener(spatial, (3, 3))
+        coeffs_estim = hstegolib.compress(precover, quant)
+
+        s = hstegolib.np.sign(coeffs_estim - coeffs)
+        rho_m1 = rho.copy()
+        rho_p1 = rho.copy()
+        rho_p1[s > 0] = m * rho_p1[s > 0]
+        rho_m1[s < 0] = m * rho_m1[s < 0]
+
+        rho_p1[rho_p1 > hstegolib.INF] = hstegolib.INF
+        rho_p1[hstegolib.np.isnan(rho_p1)] = hstegolib.INF
+        rho_p1[coeffs > 1023] = hstegolib.INF
+
+        rho_m1[rho_m1 > hstegolib.INF] = hstegolib.INF
+        rho_m1[hstegolib.np.isnan(rho_m1)] = hstegolib.INF
+        rho_m1[coeffs < -1023] = hstegolib.INF
+
+        return rho_m1, rho_p1
+
+    stego_obj.cost_polarization = _quiet_cost_polarization
 
 
 def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
@@ -526,14 +622,15 @@ def _is_jpeg_image(path: Path) -> bool:
     return ext in {"jpg", "jpeg", "jpe"}
 
 
-def _with_heartbeat(label: str, fn, interval: float = 20.0):
+def _with_heartbeat(label: str, fn, interval: float = 15.0, detail: Optional[str] = None):
     stop = threading.Event()
     start = time.monotonic()
 
     def _beat() -> None:
         while not stop.wait(interval):
             elapsed = int(time.monotonic() - start)
-            print(f"{label} still working... ({elapsed}s elapsed)", flush=True)
+            suffix = f" {detail}" if detail else ""
+            print(f"{label} still working... ({elapsed}s elapsed).{suffix}", flush=True)
 
     thread = threading.Thread(target=_beat, daemon=True)
     thread.start()
@@ -549,10 +646,12 @@ def _suppress_native_output():
     devnull_fd: Optional[int] = None
     saved_stdout_fd: Optional[int] = None
     saved_stderr_fd: Optional[int] = None
+    devnull_stream = None
     try:
         devnull_fd = os.open(os.devnull, os.O_WRONLY)
         saved_stdout_fd = os.dup(1)
         saved_stderr_fd = os.dup(2)
+        devnull_stream = open(os.devnull, "w")
     except OSError:
         for fd in (saved_stdout_fd, saved_stderr_fd, devnull_fd):
             if fd is not None:
@@ -567,12 +666,18 @@ def _suppress_native_output():
     try:
         os.dup2(devnull_fd, 1)
         os.dup2(devnull_fd, 2)
-        yield
+        with redirect_stdout(devnull_stream), redirect_stderr(devnull_stream):
+            yield
     finally:
         try:
             os.dup2(saved_stdout_fd, 1)
             os.dup2(saved_stderr_fd, 2)
         finally:
+            if devnull_stream is not None:
+                try:
+                    devnull_stream.close()
+                except OSError:
+                    pass
             for fd in (saved_stdout_fd, saved_stderr_fd, devnull_fd):
                 if fd is not None:
                     try:
@@ -595,6 +700,7 @@ def _hstego_embed(cover: Path, payload: Path, output: Path, password: str, algo:
             if not _is_jpeg_image(cover):
                 raise RuntimeError("J-UNIWARD requires a JPEG cover image.")
             stego = hstegolib.J_UNIWARD()
+            _quiet_juniward_cost_debug(stego, hstegolib)
             label = "J-UNIWARD (JPEG)"
         else:
             if not (_is_spatial_image(cover, hstegolib) or _is_jpeg_image(cover)):
@@ -602,16 +708,26 @@ def _hstego_embed(cover: Path, payload: Path, output: Path, password: str, algo:
             stego = hstegolib.S_UNIWARD()
             label = "S-UNIWARD (spatial)"
 
+        _print_embed_preflight(cover, payload, hstegolib, algo)
+
         print(
-            f"HStego embedding {label} started. First run can take several minutes (Numba JIT).",
+            f"HStego embedding {label} started.",
             flush=True,
         )
+        print("First run on a new machine can take 5-10 minutes while native code compiles.", flush=True)
+        print("Progress updates print every 15 seconds. Keep this terminal open.", flush=True)
         start = time.monotonic()
-        _with_heartbeat("HStego", lambda: stego.embed(str(cover), str(payload), password, str(output)))
+        _with_heartbeat(
+            "HStego embedding",
+            lambda: stego.embed(str(cover), str(payload), password, str(output)),
+            detail="This is normal for the flagship embedding path.",
+        )
         elapsed = time.monotonic() - start
         print(f"HStego embedding complete in {elapsed:.1f}s.", flush=True)
     except SystemExit:
         raise RuntimeError("payload too large for cover; use larger image or smaller payload.")
+    except RuntimeError:
+        raise
     except Exception as e:
         raise RuntimeError(f"HStego embed failed: {e}")
 
@@ -681,6 +797,7 @@ def _seal(args: argparse.Namespace) -> int:
     output_image = Path(args.out or "locked_artifact.jpg")
 
     try:
+        print("Preparing seal workspace...")
         _remove_existing(payload_tar, args.force, "Temporary archive")
         _remove_existing(payload_age, args.force, "Payload file")
         _remove_existing(output_image, args.force, "Locked artifact")
@@ -688,6 +805,7 @@ def _seal(args: argparse.Namespace) -> int:
         _err(str(e))
         return 1
 
+    print(f"Packing testimony into {payload_tar}...")
     _write_payload_tar(text_path, payload_tar)
 
     if pass_mode == "single-generated":
@@ -716,6 +834,7 @@ def _seal(args: argparse.Namespace) -> int:
         print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
 
     try:
+        print(f"Encrypting packed testimony into {payload_age} with age...")
         _age_encrypt(payload_tar, payload_age, age_pass)
     except RuntimeError as e:
         _err(str(e))
@@ -727,6 +846,7 @@ def _seal(args: argparse.Namespace) -> int:
             except OSError:
                 pass
 
+    print("Computing canonical CSHA over payload.age...")
     csha = _sha512_file(payload_age)
 
     try:
