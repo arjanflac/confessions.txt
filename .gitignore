@@ -1,31 +1,68 @@
-node_modules
-.venv
-venv
+# Dependencies and local environments
+node_modules/
+.venv/
+venv/
+
+# Environment files and local config
 .env
+.env.*
+!.env.example
+.confess/
+
+# Wallets, keys, and other local secrets
+wallet.json
+wallet*.json
+*.wallet.json
+arweave-keyfile*.json
+keyfile*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python cache/build output
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+/build/
+/dist/
+*.egg-info/
 
-wallet.json
-*.wallet.json
-.confess/
-.confess/config.json
-
+# CONFESSIONS.txt generated artifacts
 payload.tar.gz
 *.tar.gz
+*.tgz
 payload.age
 *.age
+locked_artifact.jpg
 locked_*.jpg
 stego*.jpg
+extracted_payload*
+decrypted_payload*
 
-dist
-.next
-.wrangler
-.DS_Store
+# Frontend/build tooling
+.next/
+.wrangler/
+
+# Local browser/test tooling
+.playwright-mcp/
+playwright-report/
+test-results/
 
 # Dev/design screenshots
 index-*.png
 verify-*.png
+screenshot-*.png
 
-# Tooling
-.playwright-mcp/
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
