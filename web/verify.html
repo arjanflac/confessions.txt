@@ -11,19 +11,19 @@
       html, body { background-color: #09090b; color-scheme: dark; }
     </style>
     <title>Verify — CONFESSIONS.txt</title>
-    <meta name="description" content="Resolve a published Base TX Hash into an auditable evidence trail." />
+    <meta name="description" content="Resolve a Base transaction hash into public artifact provenance." />
     <meta name="author" content="Arjan" />
     <meta name="creator" content="Arjan" />
     <meta name="robots" content="index,follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CONFESSIONS.txt" />
     <meta property="og:title" content="Verify — CONFESSIONS.txt" />
-    <meta property="og:description" content="Resolve a published Base TX Hash into an auditable evidence trail." />
+    <meta property="og:description" content="Resolve public metadata, preview the locked carrier artifact, and print local audit commands." />
     <meta property="og:url" content="https://confessionstxt.art/verify" />
     <meta property="og:image" content="https://confessionstxt.art/logo.png" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Verify — CONFESSIONS.txt" />
-    <meta name="twitter:description" content="Resolve a published Base TX Hash into an auditable evidence trail." />
+    <meta name="twitter:description" content="Resolve public metadata, preview the locked carrier artifact, and print local audit commands." />
     <link rel="canonical" href="https://confessionstxt.art/verify" />
     <script type="application/ld+json">
       {
@@ -31,7 +31,7 @@
         "@type": "WebPage",
         "name": "Verify - CONFESSIONS.txt",
         "url": "https://confessionstxt.art/verify",
-        "description": "Resolve a published Base TX Hash into an auditable evidence trail.",
+        "description": "Resolve a Base transaction hash into public artifact provenance.",
         "isPartOf": {
           "@type": "WebSite",
           "name": "CONFESSIONS.txt",
@@ -248,7 +248,7 @@
 
       .title-group {
         display: grid;
-        gap: 0.32rem;
+        gap: 0.48rem;
       }
 
       .sr-only {
@@ -277,6 +277,13 @@
         font-size: 1rem;
         font-weight: 440;
         line-height: 1.72;
+      }
+
+      .lede-support {
+        max-width: 41rem;
+        color: var(--text-3);
+        font-size: 0.86rem;
+        line-height: 1.64;
       }
 
       .input-panel {
@@ -372,19 +379,63 @@
       }
 
       .console {
-        min-height: 420px;
+        min-height: 310px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%), var(--surface-1);
       }
 
       .console-empty {
         display: grid;
         place-items: center;
-        min-height: 420px;
+        min-height: 310px;
         padding: 1.4rem;
-        text-align: center;
+      }
+
+      .empty-state {
+        width: min(100%, 34rem);
+        display: grid;
+        gap: 0.9rem;
+        text-align: left;
+      }
+
+      .empty-label {
+        color: var(--label-1);
+        font-family: var(--font-tech);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      .empty-copy {
         color: var(--text-3);
-        font-size: 0.96rem;
-        font-style: italic;
+        font-size: 0.95rem;
+        line-height: 1.65;
+      }
+
+      .empty-list {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.8rem;
+        color: var(--text-2);
+        font-family: var(--font-tech);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+      }
+
+      .empty-list li::before {
+        content: "";
+        display: inline-block;
+        width: 0.28rem;
+        height: 0.28rem;
+        margin-right: 0.48rem;
+        background: var(--accent);
+        transform: rotate(45deg) translateY(-1px);
+      }
+
+      .empty-note {
+        color: var(--label-2);
+        font-size: 0.76rem;
       }
 
       .console-content {
@@ -892,6 +943,10 @@
           min-height: 320px;
         }
 
+        .empty-list {
+          grid-template-columns: 1fr;
+        }
+
         .console-content {
           padding: 0.95rem;
         }
@@ -935,21 +990,22 @@
           </div>
           <div class="title-group">
             <h1 class="sr-only">Verify</h1>
-            <p class="lede" data-pretext="left">Resolve a published Base TX Hash into an auditable evidence trail.</p>
+            <p class="lede" data-pretext="left">Resolve a Base transaction hash into public artifact provenance.</p>
+            <p class="lede-support">The verifier fetches public metadata, previews the locked carrier artifact, and prints local audit commands. It does not decrypt payloads in-browser.</p>
           </div>
         </div>
       </header>
 
       <section class="input-panel card">
         <div class="input-panel-head">
-          <label class="input-label" for="input">Artifact Locator</label>
+          <label class="input-label" for="input">Base Transaction Hash</label>
         </div>
         <div class="input-row">
           <input
             id="input"
             class="input-field"
             type="text"
-            placeholder="0x... transaction hash"
+            placeholder="0x... Base transaction hash"
             autocomplete="off"
             spellcheck="false"
           />
@@ -959,7 +1015,21 @@
       </section>
 
       <section id="console" class="console card" aria-live="polite" aria-atomic="true">
-        <div class="console-empty">awaiting locator</div>
+        <div class="console-empty">
+          <div class="empty-state">
+            <span class="empty-label">Awaiting Locator</span>
+            <p class="empty-copy">Resolved records show public provenance and the audit path without receiving files or passphrases.</p>
+            <ul class="empty-list" aria-label="Resolved record fields">
+              <li>title</li>
+              <li>Arweave transaction ID</li>
+              <li>CSHA</li>
+              <li>optional STEG</li>
+              <li>carrier preview</li>
+              <li>local audit commands</li>
+            </ul>
+            <p class="empty-note">No backend. No uploaded files.</p>
+          </div>
+        </div>
       </section>
 
       <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener noreferrer">@arjan.flac</a></footer>

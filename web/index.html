@@ -6,24 +6,24 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#09090b" />
+    <meta name="theme-color" content="#07080b" />
     <style>
-      html, body { background-color: #09090b; color-scheme: dark; }
+      html, body { background-color: #07080b; color-scheme: dark; }
     </style>
-    <title>CONFESSIONS.txt — Proof of Omertà</title>
-    <meta name="description" content="Transmute high-voltage memory into immutable artifacts." />
+    <title>Proof of Omertà — CONFESSIONS.txt</title>
+    <meta name="description" content="Run CONFESSIONS.txt locally to turn plaintext testimony into a locked public artifact with verifiable provenance." />
     <meta name="author" content="Arjan" />
     <meta name="creator" content="Arjan" />
     <meta name="robots" content="index,follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CONFESSIONS.txt" />
-    <meta property="og:title" content="CONFESSIONS.txt — Proof of Omertà" />
-    <meta property="og:description" content="Transmute high-voltage memory into immutable artifacts." />
+    <meta property="og:title" content="Proof of Omertà — CONFESSIONS.txt" />
+    <meta property="og:description" content="Write locally. Seal with age. Conceal payload.age in a carrier image. Publish the pointer and CSHA." />
     <meta property="og:url" content="https://confessionstxt.art/" />
     <meta property="og:image" content="https://confessionstxt.art/logo.png" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="CONFESSIONS.txt — Proof of Omertà" />
-    <meta name="twitter:description" content="Transmute high-voltage memory into immutable artifacts." />
+    <meta name="twitter:title" content="Proof of Omertà — CONFESSIONS.txt" />
+    <meta name="twitter:description" content="A local-first terminal protocol for sealed testimony artifacts." />
     <link rel="canonical" href="https://confessionstxt.art/" />
     <script type="application/ld+json">
       {
@@ -31,7 +31,7 @@
         "@type": "WebSite",
         "name": "CONFESSIONS.txt",
         "url": "https://confessionstxt.art/",
-        "description": "Transmute high-voltage memory into immutable artifacts.",
+        "description": "A local-first terminal protocol for sealed testimony artifacts.",
         "creator": {
           "@type": "Person",
           "name": "Arjan",
@@ -43,23 +43,27 @@
     <link rel="stylesheet" href="brand-fonts.css" />
     <style>
       :root {
-        --bg:          #09090b;
-        --surface-1:   #121214;
-        --border:      #242329;
-        --text-1:      #e2e4e9;
-        --text-2:      #a0a8b6;
-        --text-3:      #5a6170;
-        --label-1:     #8f97a5;
-        --label-2:     #6f7785;
-        --accent:      #c2685f;
-        --accent-dim:  #7b342f;
-
+        --bg: #07080b;
+        --bg-2: #0a0b0f;
+        --surface-1: #111217;
+        --surface-2: #171820;
+        --surface-3: #1e202a;
+        --border: #2b2e38;
+        --border-soft: rgba(240, 242, 247, 0.08);
+        --text-1: #f0f2f7;
+        --text-2: #b7bdca;
+        --text-3: #8a91a4;
+        --text-4: #5e6578;
+        --accent: #ee7d73;
+        --accent-deep: #c95852;
+        --accent-soft: rgba(238, 125, 115, 0.15);
+        --verify: #7ad7cf;
+        --paper: #d9d2bf;
         --font-title: "Clash Grotesk", "Helvetica Neue", Arial, sans-serif;
         --font-body: "Clash Grotesk", "Helvetica Neue", Arial, sans-serif;
         --font-mono: "Nippo", "Courier New", monospace;
-
-        --radius-md: 10px;
-        --radius-lg: 16px;
+        --max: 1220px;
+        --radius: 8px;
       }
 
       @view-transition {
@@ -74,6 +78,7 @@
 
       html {
         font-size: 16px;
+        scroll-behavior: smooth;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         -webkit-text-size-adjust: 100%;
@@ -84,19 +89,43 @@
         min-height: 100dvh;
         color: var(--text-1);
         font-family: var(--font-body);
-        line-height: 1.54;
+        line-height: 1.5;
         background:
-          radial-gradient(circle at 8% -14%, rgba(194, 104, 95, 0.09), transparent 37%),
-          radial-gradient(circle at 92% 2%, rgba(194, 104, 95, 0.05), transparent 42%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 36%),
-          linear-gradient(var(--bg), var(--bg));
-        position: relative;
-        overscroll-behavior: none;
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+          linear-gradient(180deg, rgba(238, 125, 115, 0.08), transparent 27rem),
+          linear-gradient(180deg, var(--bg-2), var(--bg) 44rem, #050608);
+        background-size: 74px 74px, 74px 74px, auto, auto;
+        overflow-x: hidden;
         -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.22;
+        background:
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.045) 0, rgba(255, 255, 255, 0.045) 1px, transparent 1px, transparent 4px);
+        mask-image: linear-gradient(180deg, black, transparent 84%);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      ::selection {
+        color: #07080b;
+        background: var(--accent);
       }
 
       @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
           animation-iteration-count: 1 !important;
@@ -104,229 +133,123 @@
         }
       }
 
-      .shell {
-        width: 100%;
-        max-width: 920px;
-        margin: 0 auto;
-        min-height: 100vh;
-        min-height: 100dvh;
-        padding: 4rem 1.5rem 1.8rem;
-        padding-top: max(4rem, env(safe-area-inset-top, 0px));
-        padding-bottom: max(1.8rem, env(safe-area-inset-bottom, 0px));
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.65rem;
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .page {
         position: relative;
-        z-index: 1;
+        min-height: 100vh;
       }
 
-      @keyframes riseIn {
-        from {
-          opacity: 0;
-          transform: translateY(6px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      .eyebrow,
+      .step-name,
+      .trust-strip {
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
       }
-
-      /* -- Hero -------------------------------- */
+      .btn:focus-visible,
+      .credit a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
 
       .hero {
-        display: flex;
-        flex-direction: column;
+        width: min(calc(100% - 2.2rem), var(--max));
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0 auto;
+        padding: clamp(2.6rem, 5.8vh, 4.7rem) 0 clamp(3rem, 6vh, 4.7rem);
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
         align-items: center;
-        text-align: center;
-        gap: 1rem;
-        width: 100%;
-        opacity: 0;
-        animation: riseIn 0.5s ease forwards;
+        gap: clamp(2rem, 5vw, 5rem);
+        position: relative;
       }
 
-      .logo-frame {
-        width: 150px;
-        height: 218px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
+      .hero-copy {
+        display: grid;
+        gap: 1.22rem;
+        position: relative;
+        z-index: 3;
       }
 
-      .logo-frame img {
-        width: auto;
-        height: 100%;
-        max-width: 100%;
-        object-fit: contain;
+      .eyebrow {
+        color: var(--text-3);
+        font-size: 0.68rem;
+        font-weight: 650;
       }
 
-      .hero-text {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 0.46rem;
-        max-width: 48rem;
+      .eyebrow strong {
+        color: var(--accent);
+        font-weight: 700;
       }
 
       .title {
+        max-width: 9ch;
         font-family: var(--font-title);
-        font-size: clamp(2.9rem, 8vw, 5.4rem);
-        font-weight: 580;
-        letter-spacing: -0.04em;
-        line-height: 0.9;
-        color: var(--text-1);
-      }
-
-      .subtitle {
-        font-family: var(--font-mono);
-        font-size: 0.73rem;
+        font-size: clamp(4.6rem, 11vw, 8rem);
         font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-      }
-
-      .subtitle-name {
-        color: var(--accent);
-      }
-
-      .subtitle-tag {
-        color: var(--text-3);
+        letter-spacing: -0.045em;
+        line-height: 0.84;
+        color: var(--text-1);
       }
 
       .tagline {
-        font-size: clamp(0.94rem, 2.2vw, 1.2rem);
-        font-weight: 540;
-        line-height: 1.04;
-        letter-spacing: -0.024em;
+        max-width: 13.5ch;
+        font-size: clamp(2rem, 4.4vw, 3rem);
+        font-weight: 680;
+        letter-spacing: -0.028em;
+        line-height: 1;
         color: var(--text-2);
-        max-width: none;
-        white-space: nowrap;
       }
 
-      /* -- Divider ------------------------------ */
-
-      .divider {
-        width: 100%;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(176, 84, 84, 0.25), transparent);
-        opacity: 0;
-        animation: riseIn 0.5s ease 0.12s forwards;
-      }
-
-      /* -- Protocol section --------------------- */
-
-      .protocol-section {
-        width: 100%;
-        background: var(--surface-1);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
-        opacity: 0;
-        animation: riseIn 0.5s ease 0.2s forwards;
-      }
-
-      .protocol-inner {
-        padding: 1.45rem 1.55rem 1.55rem;
-      }
-
-      .section-head {
-        font-family: var(--font-mono);
-        font-size: 0.82rem;
-        font-weight: 700;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--text-1);
-        text-align: center;
-        padding-bottom: 0.85rem;
-        margin-bottom: 0.2rem;
-      }
-
-      .process-list {
-        list-style: none;
-        display: grid;
-        gap: 0;
-      }
-
-      .process-list li {
-        display: grid;
-        grid-template-columns: minmax(7rem, 8.4rem) 1fr;
-        align-items: start;
-        gap: 1rem;
-        line-height: 1.5;
-        padding: 0.78rem 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .process-list li:last-child {
-        border-bottom: 0;
-        padding-bottom: 0;
-      }
-
-      .step-name {
-        font-family: var(--font-mono);
-        font-size: 0.73rem;
-        font-weight: 600;
+      .lead {
+        max-width: 39rem;
         color: var(--text-2);
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        padding-top: 0.08rem;
-      }
-
-      .step-purpose {
-        color: var(--text-1);
-        font-size: 1rem;
+        font-size: clamp(1.05rem, 1.4vw, 1.18rem);
+        line-height: 1.64;
         font-weight: 440;
       }
 
-      /* -- Actions ------------------------------ */
-
-      .action-band {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.9rem;
-        opacity: 0;
-        animation: riseIn 0.5s ease 0.3s forwards;
+      .mobile-copy {
+        display: none;
       }
 
       .actions {
-        display: grid;
-        grid-template-columns: 1fr;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
         gap: 0.75rem;
-        width: 100%;
+        margin-top: 0.25rem;
       }
 
       .btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.6rem;
-        min-height: 3rem;
-        padding: 0.8rem 1.8rem;
-        border-radius: var(--radius-md);
+        gap: 0.62rem;
+        min-height: 3.15rem;
+        padding: 0.86rem 1.32rem;
         border: 1px solid;
+        border-radius: var(--radius);
         font-family: var(--font-mono);
         font-size: 0.72rem;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.15em;
+        line-height: 1.1;
         text-transform: uppercase;
         text-decoration: none;
-        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
-      }
-
-      .btn::after {
-        font-family: var(--font-mono);
-        font-size: 0.9rem;
-        line-height: 1;
-      }
-
-      .btn:focus-visible {
-        outline: 2px solid var(--text-3);
-        outline-offset: 3px;
+        transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
       }
 
       .btn:hover {
@@ -334,219 +257,584 @@
       }
 
       .btn.primary {
-        background:
-          linear-gradient(180deg, rgba(18, 18, 20, 0.94), rgba(8, 8, 10, 0.98)),
-          var(--bg);
+        color: #f1a19a;
         border-color: var(--accent);
-        color: #e38b84;
+        background:
+          linear-gradient(180deg, rgba(32, 20, 21, 0.92), rgba(7, 8, 11, 0.96)),
+          var(--bg);
         box-shadow:
-          inset 0 0 0 1px rgba(194, 104, 95, 0.08),
-          0 16px 34px rgba(0, 0, 0, 0.26);
+          inset 0 0 0 1px rgba(238, 125, 115, 0.08),
+          0 18px 42px rgba(0, 0, 0, 0.3);
       }
 
       .btn.primary:hover {
+        color: #ffd0cb;
+        border-color: #f4a099;
         background:
-          linear-gradient(180deg, rgba(31, 21, 22, 0.96), rgba(9, 9, 11, 0.98)),
+          linear-gradient(180deg, rgba(47, 25, 26, 0.96), rgba(8, 9, 12, 0.98)),
           var(--bg);
-        color: #efaaa4;
-        border-color: #d88379;
-      }
-
-      .btn-github {
-        width: 1rem;
-        height: 1rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: currentColor;
-        opacity: 0.92;
-      }
-
-      .btn-github svg {
-        display: block;
-        width: 100%;
-        height: 100%;
       }
 
       .btn.secondary {
-        background: transparent;
-        border-color: rgba(226, 228, 233, 0.24);
         color: var(--text-2);
+        border-color: rgba(240, 242, 247, 0.24);
+        background: rgba(255, 255, 255, 0.018);
       }
 
       .btn.secondary:hover {
-        background: rgba(255, 255, 255, 0.045);
-        border-color: rgba(226, 228, 233, 0.42);
         color: var(--text-1);
+        border-color: rgba(240, 242, 247, 0.42);
+        background: rgba(255, 255, 255, 0.05);
       }
 
-      .btn-icon {
+      .btn svg {
         width: 1rem;
         height: 1rem;
+        flex: 0 0 auto;
+      }
+
+      .trust-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.85rem;
+        color: var(--text-4);
+        font-size: 0.62rem;
+        font-weight: 650;
+      }
+
+      .trust-strip span {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        color: currentColor;
-        opacity: 0.92;
+        gap: 0.6rem;
       }
 
-      .btn-icon svg {
+      .trust-strip span::before {
+        content: "";
+        width: 0.28rem;
+        height: 0.28rem;
+        background: var(--accent-deep);
+        transform: rotate(45deg);
+      }
+
+      .hero-scene {
+        min-height: min(63vh, 620px);
+        display: grid;
+        place-items: center;
+        position: relative;
+        isolation: isolate;
+        overflow: clip;
+      }
+
+      .scene-frame {
+        width: min(100%, 620px);
+        aspect-ratio: 0.9;
+        position: relative;
+        display: grid;
+        place-items: center;
+        --parallax-x: 0px;
+        --parallax-y: 0px;
+      }
+
+      .scene-frame::before,
+      .scene-frame::after {
+        content: "# testimony confession.md payload.tar.gz payload.age sha512 locked_artifact.jpg\A age passphrase private public artifact material HStego embed Base TX\A 0xa58c0f4e2b919d4c7a0f68d2b4e95c1a7e3d9f021b66a44d8c7e0b5f12a9c03d\A CSHA verify --csha Arweave archive local audit commands plaintext stays local\A public record private plaintext disclosure deferred sealed before publication\A payload.age encrypted material STEG public != plaintext public\A markdown witness note.md archive pointer generated static verifier output\A 0xf6e3b8a117d45c2f98a0e4d6b73c9f08dd12a76c44ea98361b0c2f9a5d0e3cb7\A record before disclosure Base calldata prepared locked carrier image\A confession.txt sealed artifact operator controls disclosure\A sha512(payload.age) local audit public pointer private plaintext\A encrypted payload remains sealed testimony survives timestamp\A curl -fL locked_artifact.jpg local audit commands\A verification material public pointer archive generated\A private plaintext sealed public carrier durable record\A payload.tar.gz payload.age locked_artifact.jpg";
+        position: absolute;
+        inset: 1% -10% -10%;
+        z-index: 0;
+        overflow: visible;
+        color: rgba(183, 189, 202, 0.17);
+        font-family: var(--font-mono);
+        font-size: clamp(0.44rem, 1vw, 0.68rem);
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        line-height: 1.35;
+        text-align: left;
+        white-space: pre-wrap;
+        word-break: break-word;
+        pointer-events: none;
+        -webkit-mask-image: radial-gradient(ellipse at 50% 43%, black 0, black 54%, rgba(0, 0, 0, 0.72) 68%, transparent 88%);
+        mask-image: radial-gradient(ellipse at 50% 43%, black 0, black 54%, rgba(0, 0, 0, 0.72) 68%, transparent 88%);
+      }
+
+      .scene-frame::before {
+        transform: rotate(-1.2deg) translateY(0.15rem);
+      }
+
+      .scene-frame::after {
+        content: "payload.age 0x7b13e2c4a8d5901f6e32b4c9d018aa77fb6509dd2c1e4496f03bca21\A HStego embed sealed before publication archive pointer generated\A ARTIFACT != PLAINTEXT public proof private disclosure\A curl -fL locked_artifact.jpg verify --csha sha512\A Base calldata title archive pointer CSHA optional STEG\A 0x91d47ae83c5f26bdab0476e98c13d200aa4fe95d6c01f4e7b6c3d5a82f0e144b\A testimony.md payload.tar.gz payload.age locked carrier\A STATIC VERIFIER NO HOSTED SEALING SERVICE\A witness record local secret material public artifact material\A encrypted payload concealed in carrier image\A archive pointer titled reference immutable artifact\A disclosure deferred record preserved";
+        inset: 24% -9% -10%;
+        color: rgba(238, 125, 115, 0.18);
+        transform: rotate(1.4deg) translateY(0.1rem);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 0, black 56%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+        mask-image: radial-gradient(ellipse at 50% 50%, black 0, black 56%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+      }
+
+      .witness-field {
+        position: absolute;
+        inset: 0 -10% -9%;
+        z-index: 1;
+        width: auto;
+        height: auto;
+        opacity: 0.92;
+        pointer-events: none;
+        -webkit-mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 55%, rgba(0, 0, 0, 0.72) 70%, transparent 90%);
+        mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 55%, rgba(0, 0, 0, 0.72) 70%, transparent 90%);
+      }
+
+      .sword-rig {
+        width: min(54vw, 330px);
+        max-width: 72%;
+        height: auto;
+        position: relative;
+        z-index: 3;
+        perspective: 900px;
+        transform-style: preserve-3d;
+        transform: translate3d(var(--parallax-x), var(--parallax-y), 0);
+        filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.52));
+        animation: settleBlade 850ms cubic-bezier(0.17, 0.84, 0.44, 1) both;
+        transition: transform 0.18s ease-out;
+      }
+
+      .sword-rig::before,
+      .sword-rig::after {
+        content: "";
+        position: absolute;
+        left: 14%;
+        right: 14%;
+        pointer-events: none;
+      }
+
+      .sword-rig::before {
+        top: 16%;
+        bottom: 12%;
+        z-index: -1;
+        background: linear-gradient(90deg, transparent, rgba(238, 125, 115, 0.18), transparent);
+        filter: blur(28px);
+        transform: translateZ(-42px);
+      }
+
+      .sword-rig::after {
+        bottom: 3.5%;
+        height: 9%;
+        z-index: -2;
+        background: rgba(0, 0, 0, 0.62);
+        border-radius: 50%;
+        filter: blur(18px);
+        transform: rotateX(68deg) translateZ(-56px);
+      }
+
+      .sword-image {
         display: block;
         width: 100%;
-        height: 100%;
+        height: auto;
+        transform: rotateY(-7deg) rotateX(2deg);
+        transform-origin: 50% 52%;
+        animation: ceremonialYaw 14s ease-in-out infinite alternate;
       }
 
-      /* -- Credit ------------------------------- */
+      @keyframes settleBlade {
+        0% {
+          opacity: 0;
+          transform: translate3d(var(--parallax-x), calc(var(--parallax-y) + 0.7rem), 0) scale(0.985);
+        }
+        100% {
+          opacity: 1;
+          transform: translate3d(var(--parallax-x), var(--parallax-y), 0) scale(1);
+        }
+      }
+
+      @keyframes ceremonialYaw {
+        0% {
+          transform: rotateY(-8deg) rotateX(2deg) translateY(0);
+        }
+        100% {
+          transform: rotateY(8deg) rotateX(-1deg) translateY(-0.35rem);
+        }
+      }
+
+      .main-flow {
+        display: grid;
+        gap: 0;
+      }
+
+      .band {
+        border-top: 1px solid rgba(240, 242, 247, 0.08);
+        background: rgba(7, 8, 11, 0.45);
+      }
+
+      .protocol-band {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 20rem),
+          rgba(8, 9, 13, 0.68);
+      }
+
+      .section {
+        width: min(calc(100% - 2.2rem), var(--max));
+        margin: 0 auto;
+        padding: clamp(4.1rem, 7vw, 7rem) 0;
+      }
+
+      .main-flow > .band:first-child .section {
+        padding-top: clamp(2.5rem, 4.4vw, 4.5rem);
+      }
+
+      .protocol-section {
+        padding-top: clamp(3.2rem, 5.8vw, 5.2rem);
+      }
+
+      .protocol-card {
+        width: min(100%, 760px);
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(17, 18, 23, 0.84);
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+        padding: clamp(1.35rem, 3vw, 1.85rem);
+      }
+
+      .protocol-card-title {
+        color: var(--text-1);
+        font-family: var(--font-mono);
+        font-size: clamp(0.78rem, 1vw, 0.9rem);
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        line-height: 1.3;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .protocol-list {
+        list-style: none;
+        margin-top: 1.35rem;
+      }
+
+      .protocol-step {
+        padding: 0.82rem 0 0.92rem;
+        border-bottom: 1px solid rgba(240, 242, 247, 0.1);
+      }
+
+      .protocol-step:first-child {
+        padding-top: 0;
+      }
+
+      .protocol-step:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+
+      .step-name {
+        display: block;
+        color: var(--text-2);
+        font-size: clamp(0.68rem, 0.9vw, 0.78rem);
+        font-weight: 700;
+      }
+
+      .step-copy {
+        display: block;
+        margin-top: 0.22rem;
+        color: var(--text-1);
+        font-size: clamp(1rem, 1.45vw, 1.18rem);
+        line-height: 1.38;
+      }
+
+      .footer {
+        width: min(calc(100% - 2.2rem), var(--max));
+        margin: 0 auto;
+        padding: 1.8rem 0 2.3rem;
+        display: grid;
+        place-items: center;
+        color: var(--text-4);
+        border-top: 1px solid rgba(240, 242, 247, 0.08);
+      }
 
       .credit {
-        margin-top: auto;
-        text-align: center;
         font-family: var(--font-mono);
         font-size: 0.72rem;
         letter-spacing: 0.08em;
-        color: var(--label-2);
+        white-space: nowrap;
       }
 
       .credit a {
-        color: var(--label-1);
+        color: var(--text-2);
         text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.15s ease, color 0.15s ease;
+        border-bottom: 1px solid rgba(240, 242, 247, 0.2);
+        transition: color 0.16s ease, border-color 0.16s ease;
       }
 
       .credit a:hover {
-        border-color: var(--text-3);
         color: var(--text-1);
+        border-color: var(--accent);
       }
 
-      /* -- Mobile ------------------------------- */
-
-      @media (max-width: 760px) {
-        .shell {
-          padding: 1.7rem 1.1rem 1.2rem;
-          padding-top: max(1.7rem, env(safe-area-inset-top, 0px));
-          padding-bottom: max(1.2rem, env(safe-area-inset-bottom, 0px));
-          gap: 0.9rem;
-        }
-
+      @media (max-width: 940px) {
         .hero {
-          gap: 0.5rem;
+          min-height: 100vh;
+          min-height: 100dvh;
+          padding: 2.1rem 0 4rem;
+          grid-template-columns: 1fr;
+          gap: 1.2rem;
         }
 
-        .logo-frame {
-          width: 104px;
-          height: 205px;
+        .hero-scene {
+          min-height: 410px;
+          order: -1;
         }
 
-        .hero-text {
-          gap: 0.3rem;
+        .scene-frame {
+          width: min(100%, 530px);
         }
 
-        .subtitle {
-          font-size: 0.66rem;
+        .hero-copy {
+          text-align: center;
+          justify-items: center;
+        }
+
+        .title,
+        .tagline,
+        .lead {
+          max-width: 100%;
+        }
+
+        .actions,
+        .trust-strip {
+          justify-content: center;
+        }
+      }
+
+      @media (min-width: 941px) and (max-height: 900px) {
+        .hero {
+          min-height: 100vh;
+          min-height: 100dvh;
+          padding: 2rem 0 2.6rem;
+        }
+
+        .title {
+          font-size: clamp(4.2rem, 9.2vw, 6.6rem);
         }
 
         .tagline {
-          font-size: 0.9rem;
-          letter-spacing: -0.02em;
+          font-size: clamp(1.75rem, 3.2vw, 2.35rem);
         }
 
-        .section-head {
-          padding-bottom: 0.45rem;
-          font-size: 0.65rem;
+        .lead {
+          font-size: 1.02rem;
         }
 
-        .protocol-inner {
-          padding: 0.9rem 0.95rem 1rem;
+        .scene-frame {
+          width: min(100%, 500px);
         }
 
-        .process-list li {
-          grid-template-columns: 1fr;
-          gap: 0.1rem;
-          padding: 0.35rem 0;
+        .sword-rig {
+          width: min(42vw, 285px);
+        }
+      }
+
+      @media (max-width: 720px) {
+        body {
+          background-size: 52px 52px, 52px 52px, auto, auto;
         }
 
-        .step-name {
-          font-size: 0.68rem;
+        .hero,
+        .section,
+        .footer {
+          width: min(calc(100% - 1.3rem), var(--max));
         }
 
-        .step-purpose {
-          font-size: 0.92rem;
+        .hero {
+          min-height: 100vh;
+          min-height: 100dvh;
+          padding: 0.75rem 0 2.35rem;
+          gap: 0.42rem;
         }
 
-        .action-band {
-          gap: 0.55rem;
+        .hero-scene {
+          min-height: 250px;
+          margin-top: 0.15rem;
+          margin-bottom: -0.55rem;
+          overflow: visible;
+        }
+
+        .scene-frame {
+          width: min(100%, 310px);
+          aspect-ratio: 1.04;
+        }
+
+        .witness-field {
+          opacity: 1;
+          -webkit-mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 58%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+          mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 58%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+        }
+
+        .sword-rig {
+          width: min(46vw, 150px);
+          max-width: 50%;
+        }
+
+        .hero-copy {
+          gap: 0.78rem;
+        }
+
+        .eyebrow {
+          max-width: 20rem;
+          font-size: 0.61rem;
+          line-height: 1.55;
+        }
+
+        .title {
+          max-width: 6.2ch;
+          font-size: clamp(3.2rem, 15vw, 4.35rem);
+        }
+
+        .tagline {
+          max-width: 19rem;
+          font-size: clamp(1.42rem, 7.2vw, 1.85rem);
+          line-height: 0.98;
+        }
+
+        .lead {
+          max-width: 20.5rem;
+          font-size: 0.91rem;
+          line-height: 1.45;
+        }
+
+        .protocol-card {
+          padding: 1.2rem 1.15rem 1.3rem;
+          border-radius: 16px;
+          background: rgba(17, 18, 23, 0.88);
+        }
+
+        .protocol-list {
+          margin-top: 1.2rem;
+        }
+
+        .protocol-step {
+          padding: 0.78rem 0 0.88rem;
+        }
+
+        .step-copy {
+          font-size: 1.08rem;
+          line-height: 1.38;
+        }
+
+        .desktop-copy {
+          display: none;
+        }
+
+        .mobile-copy {
+          display: inline;
         }
 
         .actions {
-          flex-direction: column;
           width: 100%;
-          gap: 0.45rem;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0.55rem;
         }
 
         .btn {
           width: 100%;
-          min-height: 2.5rem;
-          padding: 0.55rem 1.4rem;
+          min-height: 3rem;
         }
 
-        .credit {
-          font-size: 0.68rem;
+        .trust-strip {
+          display: flex;
+          justify-content: center;
+          gap: 0.42rem 0.7rem;
+          font-size: 0.56rem;
+        }
+
+        .section {
+          padding: 3.6rem 0;
+        }
+
+        .footer {
+          display: grid;
+          justify-items: center;
+          text-align: center;
         }
       }
     </style>
   </head>
   <body>
-    <main class="shell">
+    <div class="page">
       <header class="hero">
-        <div class="logo-frame">
-          <img src="logo.png" alt="" />
-        </div>
-        <div class="hero-text">
+        <div class="hero-copy">
           <h1 class="title">Proof of Omertà</h1>
-          <p class="subtitle"><span class="subtitle-name">CONFESSIONS.txt</span> <span class="subtitle-tag">(R&amp;D)</span></p>
+          <p class="eyebrow"><strong>CONFESSIONS.txt</strong> [R&amp;D]</p>
           <p class="tagline">Transmute high-voltage memory into immutable artifacts</p>
+          <p class="lead">
+            <span class="desktop-copy">CONFESSIONS.txt is an open-source local CLI for sealed testimony artifacts: write locally, encrypt, conceal the payload in an image, archive the carrier, and publish a titled reference.</span>
+            <span class="mobile-copy">Open-source local CLI for sealed testimony artifacts: write, encrypt, conceal in an image, archive, publish a titled reference.</span>
+          </p>
+          <div class="actions" aria-label="Primary">
+            <a class="btn primary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
+                <path d="M8 0.2a8 8 0 0 0-2.53 15.6c0.4 0.07 0.55-0.17 0.55-0.38v-1.35c-2.23 0.48-2.7-0.95-2.7-0.95-0.36-0.92-0.89-1.17-0.89-1.17-0.73-0.5 0.06-0.49 0.06-0.49 0.8 0.06 1.23 0.83 1.23 0.83 0.72 1.22 1.88 0.87 2.34 0.67 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.65-0.89-3.65-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82A7.7 7.7 0 0 1 8 3.93c0.68 0 1.36 0.09 1.99 0.27 1.52-1.03 2.19-0.82 2.19-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.28 0.82 2.15 0 3.07-1.88 3.75-3.66 3.95 0.29 0.25 0.54 0.73 0.54 1.48v2.19c0 0.21 0.15 0.45 0.55 0.38A8 8 0 0 0 8 0.2Z" />
+              </svg>
+              Run locally
+            </a>
+            <a class="btn secondary" href="/verify" data-smooth-nav>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              Verify artifact
+            </a>
+          </div>
+          <div class="trust-strip" aria-label="Trust boundaries">
+            <span>Open source</span>
+            <span>No hosted sealing</span>
+            <span>Static verifier</span>
+          </div>
+        </div>
+
+        <div class="hero-scene" aria-hidden="true">
+          <div class="scene-frame" data-hero-scene>
+            <canvas class="witness-field" data-witness-field></canvas>
+            <div class="sword-rig">
+              <img class="sword-image" src="logo.png" alt="" />
+            </div>
+          </div>
         </div>
       </header>
 
-      <div class="divider" role="separator"></div>
+      <main class="main-flow">
+        <section id="protocol" class="band protocol-band">
+          <div class="section protocol-section">
+            <div class="protocol-card">
+              <h2 class="protocol-card-title">Protocol</h2>
+              <ol class="protocol-list" role="list">
+                <li class="protocol-step">
+                  <span class="step-name">Record</span>
+                  <span class="step-copy">Capture testimony in plaintext.</span>
+                </li>
+                <li class="protocol-step">
+                  <span class="step-name">Seal</span>
+                  <span class="step-copy">Encrypt the payload with age.</span>
+                </li>
+                <li class="protocol-step">
+                  <span class="step-name">Conceal</span>
+                  <span class="step-copy">Embed the sealed payload into a carrier artifact via HStego.</span>
+                </li>
+                <li class="protocol-step">
+                  <span class="step-name">Archive</span>
+                  <span class="step-copy">Store the locked artifact on Arweave.</span>
+                </li>
+                <li class="protocol-step">
+                  <span class="step-name">Broadcast</span>
+                  <span class="step-copy">Publish the artifact as a titled work on Base.</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </section>
+      </main>
 
-      <section class="protocol-section">
-        <div class="protocol-inner">
-          <h2 class="section-head">Protocol</h2>
-          <ol class="process-list" role="list">
-            <li><span class="step-name">Record</span><span class="step-purpose">Capture testimony in plaintext.</span></li>
-            <li><span class="step-name">Seal</span><span class="step-purpose">Encrypt the payload with age.</span></li>
-            <li><span class="step-name">Conceal</span><span class="step-purpose">Embed the sealed payload into a carrier artifact via HStego.</span></li>
-            <li><span class="step-name">Archive</span><span class="step-purpose">Store the locked artifact on Arweave.</span></li>
-            <li><span class="step-name">Broadcast</span><span class="step-purpose">Publish the artifact as a titled work on Base.</span></li>
-          </ol>
-        </div>
-      </section>
-
-      <div class="action-band">
-        <nav class="actions" aria-label="Primary">
-          <a class="btn primary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener noreferrer">
-            <span class="btn-github" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="currentColor" focusable="false">
-                <path d="M8 0.2a8 8 0 0 0-2.53 15.6c0.4 0.07 0.55-0.17 0.55-0.38v-1.35c-2.23 0.48-2.7-0.95-2.7-0.95-0.36-0.92-0.89-1.17-0.89-1.17-0.73-0.5 0.06-0.49 0.06-0.49 0.8 0.06 1.23 0.83 1.23 0.83 0.72 1.22 1.88 0.87 2.34 0.67 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.65-0.89-3.65-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82A7.7 7.7 0 0 1 8 3.93c0.68 0 1.36 0.09 1.99 0.27 1.52-1.03 2.19-0.82 2.19-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.28 0.82 2.15 0 3.07-1.88 3.75-3.66 3.95 0.29 0.25 0.54 0.73 0.54 1.48v2.19c0 0.21 0.15 0.45 0.55 0.38A8 8 0 0 0 8 0.2Z" />
-              </svg>
-            </span>
-            Run Locally
-          </a>
-          <a class="btn secondary" href="/verify" data-smooth-nav>
-            <span class="btn-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-            </span>
-            Verify Artifact
-          </a>
-        </nav>
-      </div>
-
-      <footer class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener noreferrer">@arjan.flac</a></footer>
-    </main>
+      <footer class="footer">
+        <p class="credit">via <a href="https://www.instagram.com/arjan.flac/" target="_blank" rel="noopener noreferrer">@arjan.flac</a></p>
+      </footer>
+    </div>
     <script src="page-transition.js"></script>
+    <script type="module" src="hero-field.js"></script>
   </body>
 </html>
