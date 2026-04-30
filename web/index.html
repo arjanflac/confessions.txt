@@ -79,6 +79,7 @@
       html {
         font-size: 16px;
         scroll-behavior: smooth;
+        overflow-x: hidden;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         -webkit-text-size-adjust: 100%;
@@ -148,6 +149,7 @@
       .page {
         position: relative;
         min-height: 100vh;
+        overflow-x: clip;
       }
 
       .eyebrow,
@@ -651,7 +653,7 @@
           min-height: 250px;
           margin-top: 0.15rem;
           margin-bottom: -0.55rem;
-          overflow: visible;
+          overflow: clip;
         }
 
         .scene-frame {
