@@ -321,7 +321,7 @@
       }
 
       .hero-scene {
-        min-height: min(63vh, 620px);
+        min-height: min(70vh, 720px);
         display: grid;
         place-items: center;
         position: relative;
@@ -330,8 +330,8 @@
       }
 
       .scene-frame {
-        width: min(100%, 620px);
-        aspect-ratio: 0.9;
+        width: min(100%, 720px);
+        aspect-ratio: 0.86;
         position: relative;
         display: grid;
         place-items: center;
@@ -341,53 +341,41 @@
 
       .scene-frame::before,
       .scene-frame::after {
-        content: "# testimony confession.md payload.tar.gz payload.age sha512 locked_artifact.jpg\A age passphrase private public artifact material HStego embed Base TX\A 0xa58c0f4e2b919d4c7a0f68d2b4e95c1a7e3d9f021b66a44d8c7e0b5f12a9c03d\A CSHA verify --csha Arweave archive local audit commands plaintext stays local\A public record private plaintext disclosure deferred sealed before publication\A payload.age encrypted material STEG public != plaintext public\A markdown witness note.md archive pointer generated static verifier output\A 0xf6e3b8a117d45c2f98a0e4d6b73c9f08dd12a76c44ea98361b0c2f9a5d0e3cb7\A record before disclosure Base calldata prepared locked carrier image\A confession.txt sealed artifact operator controls disclosure\A sha512(payload.age) local audit public pointer private plaintext\A encrypted payload remains sealed testimony survives timestamp\A curl -fL locked_artifact.jpg local audit commands\A verification material public pointer archive generated\A private plaintext sealed public carrier durable record\A payload.tar.gz payload.age locked_artifact.jpg";
+        content: "";
         position: absolute;
-        inset: 1% -10% -10%;
-        z-index: 0;
-        overflow: visible;
-        color: rgba(183, 189, 202, 0.17);
-        font-family: var(--font-mono);
-        font-size: clamp(0.44rem, 1vw, 0.68rem);
-        font-weight: 650;
-        letter-spacing: 0.02em;
-        line-height: 1.35;
-        text-align: left;
-        white-space: pre-wrap;
-        word-break: break-word;
         pointer-events: none;
-        -webkit-mask-image: radial-gradient(ellipse at 50% 43%, black 0, black 54%, rgba(0, 0, 0, 0.72) 68%, transparent 88%);
-        mask-image: radial-gradient(ellipse at 50% 43%, black 0, black 54%, rgba(0, 0, 0, 0.72) 68%, transparent 88%);
       }
 
       .scene-frame::before {
-        transform: rotate(-1.2deg) translateY(0.15rem);
+        inset: 6% 8% 11%;
+        z-index: 0;
+        background:
+          radial-gradient(ellipse at 50% 34%, rgba(238, 125, 115, 0.14), transparent 48%),
+          radial-gradient(ellipse at 50% 60%, rgba(122, 215, 207, 0.055), transparent 54%);
+        filter: blur(20px);
+        transform: translateY(0.15rem);
       }
 
       .scene-frame::after {
-        content: "payload.age 0x7b13e2c4a8d5901f6e32b4c9d018aa77fb6509dd2c1e4496f03bca21\A HStego embed sealed before publication archive pointer generated\A ARTIFACT != PLAINTEXT public proof private disclosure\A curl -fL locked_artifact.jpg verify --csha sha512\A Base calldata title archive pointer CSHA optional STEG\A 0x91d47ae83c5f26bdab0476e98c13d200aa4fe95d6c01f4e7b6c3d5a82f0e144b\A testimony.md payload.tar.gz payload.age locked carrier\A STATIC VERIFIER NO HOSTED SEALING SERVICE\A witness record local secret material public artifact material\A encrypted payload concealed in carrier image\A archive pointer titled reference immutable artifact\A disclosure deferred record preserved";
-        inset: 24% -9% -10%;
-        color: rgba(238, 125, 115, 0.18);
-        transform: rotate(1.4deg) translateY(0.1rem);
-        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 0, black 56%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
-        mask-image: radial-gradient(ellipse at 50% 50%, black 0, black 56%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+        content: none;
       }
 
       .witness-field {
         position: absolute;
-        inset: 0 -10% -9%;
+        top: 2%;
+        left: -4%;
         z-index: 1;
-        width: auto;
-        height: auto;
-        opacity: 0.92;
+        width: 108%;
+        height: 98%;
+        opacity: 0.74;
         pointer-events: none;
-        -webkit-mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 55%, rgba(0, 0, 0, 0.72) 70%, transparent 90%);
-        mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 55%, rgba(0, 0, 0, 0.72) 70%, transparent 90%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 46%, black 0, black 48%, rgba(0, 0, 0, 0.62) 66%, transparent 88%);
+        mask-image: radial-gradient(ellipse at 50% 46%, black 0, black 48%, rgba(0, 0, 0, 0.62) 66%, transparent 88%);
       }
 
       .sword-rig {
-        width: min(54vw, 330px);
-        max-width: 72%;
+        width: min(64vw, 430px);
+        max-width: 86%;
         height: auto;
         position: relative;
         z-index: 3;
@@ -690,11 +678,11 @@
         }
 
         .scene-frame {
-          width: min(100%, 500px);
+          width: min(100%, 590px);
         }
 
         .sword-rig {
-          width: min(42vw, 285px);
+          width: min(50vw, 360px);
         }
       }
 
@@ -743,35 +731,35 @@
         .hero {
           min-height: 100vh;
           min-height: 100dvh;
-          padding: 0.75rem 0 2.35rem;
-          gap: 0.42rem;
+          padding: 0.45rem 0 1rem;
+          gap: 0.25rem;
         }
 
         .hero-scene {
-          min-height: 250px;
-          margin-top: 0.15rem;
-          margin-bottom: -0.55rem;
+          min-height: 260px;
+          margin-top: 0;
+          margin-bottom: -3.15rem;
           overflow: clip;
         }
 
         .scene-frame {
-          width: min(100%, 310px);
-          aspect-ratio: 1.04;
+          width: min(100%, 306px);
+          aspect-ratio: 0.96;
         }
 
         .witness-field {
-          opacity: 1;
-          -webkit-mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 58%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
-          mask-image: radial-gradient(ellipse at 50% 44%, black 0, black 58%, rgba(0, 0, 0, 0.7) 72%, transparent 91%);
+          opacity: 0.82;
+          -webkit-mask-image: radial-gradient(ellipse at 50% 45%, black 0, black 45%, rgba(0, 0, 0, 0.54) 66%, transparent 90%);
+          mask-image: radial-gradient(ellipse at 50% 45%, black 0, black 45%, rgba(0, 0, 0, 0.54) 66%, transparent 90%);
         }
 
         .sword-rig {
-          width: min(46vw, 150px);
-          max-width: 50%;
+          width: min(54vw, 178px);
+          max-width: 60%;
         }
 
         .hero-copy {
-          gap: 0.78rem;
+          gap: 0.56rem;
         }
 
         .eyebrow {
@@ -782,19 +770,19 @@
 
         .title {
           max-width: 6.2ch;
-          font-size: clamp(3.2rem, 15vw, 4.35rem);
+          font-size: clamp(3rem, 13.5vw, 3.95rem);
         }
 
         .tagline {
           max-width: 19rem;
-          font-size: clamp(1.42rem, 7.2vw, 1.85rem);
+          font-size: clamp(1.35rem, 6.4vw, 1.65rem);
           line-height: 0.98;
         }
 
         .lead {
-          max-width: 20.5rem;
-          font-size: 0.91rem;
-          line-height: 1.45;
+          max-width: 23rem;
+          font-size: clamp(0.76rem, 3.45vw, 0.86rem);
+          line-height: 1.26;
         }
 
         .protocol-card {
@@ -836,19 +824,21 @@
           width: 100%;
           display: grid;
           grid-template-columns: 1fr;
-          gap: 0.55rem;
+          gap: 0.45rem;
         }
 
         .btn {
           width: 100%;
-          min-height: 3rem;
+          min-height: 2.68rem;
+          padding-top: 0.76rem;
+          padding-bottom: 0.76rem;
         }
 
         .trust-strip {
           display: flex;
           justify-content: center;
-          gap: 0.42rem 0.7rem;
-          font-size: 0.56rem;
+          gap: 0.34rem 0.58rem;
+          font-size: 0.52rem;
         }
 
         .section {
@@ -872,7 +862,7 @@
           <p class="tagline">Transmute high-voltage memory into immutable artifacts</p>
           <p class="lead">
             <span class="desktop-copy">Open-source local CLI for records that need to exist before they can be read: write locally, encrypt with age, conceal payload.age in a carrier image, archive the carrier, publish the reference.</span>
-            <span class="mobile-copy">Open-source local CLI for records that need to exist before they can be read: encrypt, conceal, archive, publish the reference.</span>
+            <span class="mobile-copy">Open-source local CLI for records that need to exist before they can be read: write locally, encrypt with age, conceal payload.age in a carrier image, archive the carrier, publish the reference.</span>
           </p>
           <div class="actions" aria-label="Primary">
             <a class="btn primary" href="https://github.com/arjanflac/confessions.txt" target="_blank" rel="noopener noreferrer">
