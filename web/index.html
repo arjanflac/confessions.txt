@@ -43,20 +43,22 @@
     <link rel="stylesheet" href="brand-fonts.css" />
     <style>
       :root {
-        --bg: #07080b;
-        --bg-2: #0a0b0f;
-        --surface-1: #111217;
-        --surface-2: #171820;
-        --surface-3: #1e202a;
-        --border: #2b2e38;
-        --border-soft: rgba(240, 242, 247, 0.08);
-        --text-1: #f0f2f7;
-        --text-2: #b7bdca;
-        --text-3: #8a91a4;
-        --text-4: #5e6578;
-        --accent: #ee7d73;
-        --accent-deep: #c95852;
-        --accent-soft: rgba(238, 125, 115, 0.15);
+        --bg: #09090b;
+        --bg-2: #0c0c10;
+        --surface-1: #121214;
+        --surface-2: #1a1a1d;
+        --surface-3: rgba(26, 26, 29, 0.84);
+        --border: #242329;
+        --border-soft: rgba(255, 255, 255, 0.07);
+        --text-1: #e2e4e9;
+        --text-2: #a0a8b6;
+        --text-3: #5a6170;
+        --text-4: #4d5360;
+        --label-1: #8f97a5;
+        --label-2: #6f7785;
+        --accent: #c2685f;
+        --accent-deep: #7b342f;
+        --accent-soft: rgba(194, 104, 95, 0.15);
         --verify: #7ad7cf;
         --paper: #d9d2bf;
         --font-title: "Clash Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -94,7 +96,7 @@
         background:
           linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
           linear-gradient(180deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-          linear-gradient(180deg, rgba(238, 125, 115, 0.08), transparent 27rem),
+          linear-gradient(180deg, rgba(194, 104, 95, 0.085), transparent 27rem),
           linear-gradient(180deg, var(--bg-2), var(--bg) 44rem, #050608);
         background-size: 74px 74px, 74px 74px, auto, auto;
         overflow-x: hidden;
@@ -169,28 +171,35 @@
 
       .hero {
         width: min(calc(100% - 2.2rem), var(--max));
-        min-height: 100vh;
-        min-height: 100dvh;
+        min-height: calc(100vh - 2.5rem);
+        min-height: calc(100dvh - 2.5rem);
         margin: 0 auto;
         padding: clamp(2.6rem, 5.8vh, 4.7rem) 0 clamp(3rem, 6vh, 4.7rem);
         display: grid;
-        grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
+        grid-template-columns: minmax(0, 0.96fr) minmax(360px, 1.04fr);
         align-items: center;
-        gap: clamp(2rem, 5vw, 5rem);
+        gap: clamp(2.4rem, 5vw, 5.4rem);
         position: relative;
       }
 
       .hero-copy {
         display: grid;
-        gap: 1.22rem;
+        gap: 1.12rem;
         position: relative;
         z-index: 3;
+        max-width: 44rem;
+      }
+
+      .hero-headline {
+        display: grid;
+        gap: 1.12rem;
       }
 
       .eyebrow {
-        color: var(--text-3);
+        color: var(--label-1);
         font-size: 0.68rem;
-        font-weight: 650;
+        font-weight: 600;
+        letter-spacing: 0.2em;
       }
 
       .eyebrow strong {
@@ -201,19 +210,19 @@
       .title {
         max-width: 9ch;
         font-family: var(--font-title);
-        font-size: clamp(4.6rem, 11vw, 8rem);
+        font-size: clamp(4.55rem, 9.4vw, 7.25rem);
         font-weight: 600;
-        letter-spacing: -0.045em;
-        line-height: 0.84;
+        letter-spacing: -0.04em;
+        line-height: 0.86;
         color: var(--text-1);
       }
 
       .tagline {
-        max-width: 13.5ch;
-        font-size: clamp(2rem, 4.4vw, 3rem);
+        max-width: 14.5ch;
+        font-size: clamp(1.9rem, 3.75vw, 2.72rem);
         font-weight: 680;
-        letter-spacing: -0.028em;
-        line-height: 1;
+        letter-spacing: -0.024em;
+        line-height: 1.02;
         color: var(--text-2);
       }
 
@@ -245,10 +254,10 @@
         min-height: 3.15rem;
         padding: 0.86rem 1.32rem;
         border: 1px solid;
-        border-radius: var(--radius);
+        border-radius: 10px;
         font-family: var(--font-mono);
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 600;
         letter-spacing: 0.15em;
         line-height: 1.1;
         text-transform: uppercase;
@@ -261,27 +270,21 @@
       }
 
       .btn.primary {
-        color: #f1a19a;
+        color: var(--accent);
         border-color: var(--accent);
-        background:
-          linear-gradient(180deg, rgba(32, 20, 21, 0.92), rgba(7, 8, 11, 0.96)),
-          var(--bg);
-        box-shadow:
-          inset 0 0 0 1px rgba(238, 125, 115, 0.08),
-          0 18px 42px rgba(0, 0, 0, 0.3);
+        background: rgba(7, 7, 9, 0.36);
+        box-shadow: none;
       }
 
       .btn.primary:hover {
-        color: #ffd0cb;
-        border-color: #f4a099;
-        background:
-          linear-gradient(180deg, rgba(47, 25, 26, 0.96), rgba(8, 9, 12, 0.98)),
-          var(--bg);
+        color: #d9877f;
+        border-color: #d9877f;
+        background: rgba(194, 104, 95, 0.1);
       }
 
       .btn.secondary {
         color: var(--text-2);
-        border-color: rgba(240, 242, 247, 0.24);
+        border-color: var(--border);
         background: rgba(255, 255, 255, 0.018);
       }
 
@@ -301,9 +304,10 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem 0.85rem;
-        color: var(--text-4);
+        color: var(--label-2);
         font-size: 0.62rem;
-        font-weight: 650;
+        font-weight: 600;
+        letter-spacing: 0.18em;
       }
 
       .trust-strip span {
@@ -337,6 +341,9 @@
         place-items: center;
         --parallax-x: 0px;
         --parallax-y: 0px;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
 
       .scene-frame::before,
@@ -350,7 +357,7 @@
         inset: 6% 8% 11%;
         z-index: 0;
         background:
-          radial-gradient(ellipse at 50% 34%, rgba(238, 125, 115, 0.14), transparent 48%),
+          radial-gradient(ellipse at 50% 34%, rgba(194, 104, 95, 0.15), transparent 48%),
           radial-gradient(ellipse at 50% 60%, rgba(122, 215, 207, 0.055), transparent 54%);
         filter: blur(20px);
         transform: translateY(0.15rem);
@@ -385,6 +392,9 @@
         filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.52));
         animation: settleBlade 850ms cubic-bezier(0.17, 0.84, 0.44, 1) both;
         transition: transform 0.18s ease-out;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
 
       .sword-rig::before,
@@ -400,7 +410,7 @@
         top: 16%;
         bottom: 12%;
         z-index: -1;
-        background: linear-gradient(90deg, transparent, rgba(238, 125, 115, 0.18), transparent);
+        background: linear-gradient(90deg, transparent, rgba(194, 104, 95, 0.18), transparent);
         filter: blur(28px);
         transform: translateZ(-42px);
       }
@@ -419,6 +429,8 @@
         display: block;
         width: 100%;
         height: auto;
+        pointer-events: none;
+        -webkit-user-drag: none;
         transform: rotateY(-7deg) rotateX(2deg);
         transform-origin: 50% 52%;
         animation: ceremonialYaw 14s ease-in-out infinite alternate;
@@ -441,6 +453,12 @@
         }
         100% {
           transform: rotateY(8deg) rotateX(-1deg) translateY(-0.35rem);
+        }
+      }
+
+      @media (hover: none), (pointer: coarse) {
+        .scene-frame {
+          pointer-events: none;
         }
       }
 
@@ -513,7 +531,7 @@
         right: 4%;
         top: 3.68rem;
         height: 1px;
-        background: linear-gradient(90deg, rgba(240, 242, 247, 0.06), rgba(238, 125, 115, 0.34), rgba(240, 242, 247, 0.06));
+        background: linear-gradient(90deg, rgba(240, 242, 247, 0.06), rgba(194, 104, 95, 0.34), rgba(240, 242, 247, 0.06));
         pointer-events: none;
       }
 
@@ -531,7 +549,7 @@
       }
 
       .protocol-step.is-conceal {
-        background: linear-gradient(180deg, rgba(238, 125, 115, 0.06), rgba(238, 125, 115, 0.015));
+        background: linear-gradient(180deg, rgba(194, 104, 95, 0.06), rgba(194, 104, 95, 0.015));
       }
 
       .step-index {
@@ -562,8 +580,8 @@
       }
 
       .protocol-step.is-conceal .step-artifact {
-        color: #efa29b;
-        border-color: rgba(238, 125, 115, 0.34);
+        color: #d9877f;
+        border-color: rgba(194, 104, 95, 0.34);
         background: rgba(18, 10, 11, 0.92);
       }
 
@@ -589,7 +607,7 @@
         }
 
         .protocol-step:hover .step-artifact {
-          border-color: rgba(238, 125, 115, 0.32);
+          border-color: rgba(194, 104, 95, 0.32);
           color: var(--text-2);
         }
       }
@@ -625,25 +643,25 @@
 
       @media (max-width: 940px) {
         .hero {
-          min-height: 100vh;
-          min-height: 100dvh;
-          padding: 2.1rem 0 4rem;
-          grid-template-columns: 1fr;
-          gap: 1.2rem;
+          min-height: auto;
+          padding: 2rem 0 3.25rem;
+          grid-template-columns: minmax(14rem, 0.76fr) minmax(0, 1fr);
+          gap: clamp(1.35rem, 4vw, 2.4rem);
+          align-items: center;
         }
 
         .hero-scene {
-          min-height: 410px;
-          order: -1;
+          min-height: min(54vw, 430px);
         }
 
         .scene-frame {
-          width: min(100%, 530px);
+          width: min(100%, 430px);
         }
 
         .hero-copy {
-          text-align: center;
-          justify-items: center;
+          text-align: left;
+          justify-items: start;
+          max-width: 30rem;
         }
 
         .title,
@@ -654,14 +672,14 @@
 
         .actions,
         .trust-strip {
-          justify-content: center;
+          justify-content: flex-start;
         }
       }
 
       @media (min-width: 941px) and (max-height: 900px) {
         .hero {
-          min-height: 100vh;
-          min-height: 100dvh;
+          min-height: calc(100vh - 2rem);
+          min-height: calc(100dvh - 2rem);
           padding: 2rem 0 2.6rem;
         }
 
@@ -698,7 +716,7 @@
           bottom: 1.2rem;
           width: 1px;
           height: auto;
-          background: linear-gradient(180deg, rgba(240, 242, 247, 0.06), rgba(238, 125, 115, 0.3), rgba(240, 242, 247, 0.06));
+          background: linear-gradient(180deg, rgba(240, 242, 247, 0.06), rgba(194, 104, 95, 0.3), rgba(240, 242, 247, 0.06));
         }
 
         .protocol-step {
@@ -729,60 +747,103 @@
         }
 
         .hero {
+          width: min(calc(100% - 1.55rem), var(--max));
           min-height: 100vh;
-          min-height: 100dvh;
-          padding: 0.45rem 0 1rem;
-          gap: 0.25rem;
+          min-height: 100svh;
+          padding: clamp(1.5rem, 6vw, 2.25rem) 0 max(1.75rem, env(safe-area-inset-bottom, 0px));
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: clamp(0.82rem, 2.35vh, 1.25rem);
+          text-align: center;
         }
 
         .hero-scene {
-          min-height: 260px;
-          margin-top: 0;
-          margin-bottom: -3.15rem;
-          overflow: clip;
+          order: 1;
+          width: clamp(8rem, 34vw, 9.5rem);
+          min-height: 0;
+          margin: 0 0 -0.35rem;
+          place-items: center;
+          overflow: visible;
+          transform: none;
         }
 
         .scene-frame {
-          width: min(100%, 306px);
-          aspect-ratio: 0.96;
+          width: 100%;
+          aspect-ratio: 0.58;
         }
 
         .witness-field {
-          opacity: 0.82;
-          -webkit-mask-image: radial-gradient(ellipse at 50% 45%, black 0, black 45%, rgba(0, 0, 0, 0.54) 66%, transparent 90%);
-          mask-image: radial-gradient(ellipse at 50% 45%, black 0, black 45%, rgba(0, 0, 0, 0.54) 66%, transparent 90%);
+          top: -8%;
+          left: -70%;
+          width: 240%;
+          height: 116%;
+          opacity: 0.5;
+          -webkit-mask-image: radial-gradient(ellipse at 46% 48%, black 0, black 38%, rgba(0, 0, 0, 0.46) 61%, transparent 88%);
+          mask-image: radial-gradient(ellipse at 46% 48%, black 0, black 38%, rgba(0, 0, 0, 0.46) 61%, transparent 88%);
         }
 
         .sword-rig {
-          width: min(54vw, 178px);
-          max-width: 60%;
+          width: 100%;
+          max-width: 100%;
         }
 
-        .hero-copy {
-          gap: 0.56rem;
+        .hero-copy,
+        .hero-headline {
+          display: contents;
         }
 
         .eyebrow {
-          max-width: 20rem;
-          font-size: 0.61rem;
-          line-height: 1.55;
+          order: 2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.62rem;
+          max-width: min(100%, 21rem);
+          color: var(--label-1);
+          font-size: 0.64rem;
+          line-height: 1.25;
+          letter-spacing: 0.2em;
+          white-space: nowrap;
+        }
+
+        .eyebrow::before,
+        .eyebrow::after {
+          content: "";
+          width: clamp(1.2rem, 7vw, 1.9rem);
+          height: 1px;
+          flex: 0 0 auto;
+          background: rgba(194, 104, 95, 0.46);
         }
 
         .title {
-          max-width: 6.2ch;
-          font-size: clamp(3rem, 13.5vw, 3.95rem);
+          order: 3;
+          max-width: 7.4ch;
+          margin-top: -0.3rem;
+          font-size: clamp(3.05rem, 13.2vw, 4.1rem);
+          line-height: 0.86;
+          letter-spacing: -0.035em;
+          text-align: center;
         }
 
         .tagline {
-          max-width: 19rem;
-          font-size: clamp(1.35rem, 6.4vw, 1.65rem);
-          line-height: 0.98;
+          order: 4;
+          max-width: 22ch;
+          margin: 0 auto;
+          font-size: clamp(1.45rem, 6vw, 1.72rem);
+          line-height: 1.12;
+          text-align: center;
         }
 
         .lead {
-          max-width: 23rem;
-          font-size: clamp(0.76rem, 3.45vw, 0.86rem);
-          line-height: 1.26;
+          order: 5;
+          max-width: 36ch;
+          margin: 0 auto;
+          color: var(--text-2);
+          font-size: clamp(0.88rem, 3.85vw, 0.98rem);
+          line-height: 1.48;
+          text-align: center;
         }
 
         .protocol-card {
@@ -821,24 +882,42 @@
         }
 
         .actions {
+          order: 6;
           width: 100%;
+          max-width: 22.5rem;
           display: grid;
           grid-template-columns: 1fr;
-          gap: 0.45rem;
+          gap: 0.72rem;
+          margin: 0 auto;
         }
 
         .btn {
           width: 100%;
-          min-height: 2.68rem;
-          padding-top: 0.76rem;
-          padding-bottom: 0.76rem;
+          min-height: 3.08rem;
+          padding-top: 0.82rem;
+          padding-bottom: 0.82rem;
         }
 
         .trust-strip {
-          display: flex;
+          order: 7;
+          display: grid;
+          grid-template-columns: auto auto;
           justify-content: center;
-          gap: 0.34rem 0.58rem;
-          font-size: 0.52rem;
+          gap: 0.5rem 1.18rem;
+          width: 100%;
+          margin: 0 auto;
+          font-size: 0.58rem;
+          line-height: 1.35;
+          text-align: center;
+        }
+
+        .trust-strip span {
+          gap: 0.46rem;
+        }
+
+        .trust-strip span:last-child {
+          grid-column: 1 / -1;
+          justify-self: center;
         }
 
         .section {
@@ -857,8 +936,10 @@
     <div class="page">
       <header class="hero">
         <div class="hero-copy">
-          <h1 class="title">Proof of Omertà</h1>
-          <p class="eyebrow"><strong>CONFESSIONS.txt</strong> [R&amp;D]</p>
+          <div class="hero-headline">
+            <h1 class="title">Proof of Omertà</h1>
+            <p class="eyebrow"><strong>CONFESSIONS.txt</strong> [R&amp;D]</p>
+          </div>
           <p class="tagline">Transmute high-voltage memory into immutable artifacts</p>
           <p class="lead">
             <span class="desktop-copy">Open-source local CLI for records that need to exist before they can be read: write locally, encrypt with age, conceal payload.age in a carrier image, archive the carrier, publish the reference.</span>
@@ -890,7 +971,7 @@
           <div class="scene-frame" data-hero-scene>
             <canvas class="witness-field" data-witness-field></canvas>
             <div class="sword-rig">
-              <img class="sword-image" src="logo.png" alt="" />
+              <img class="sword-image" src="logo.png" alt="" draggable="false" />
             </div>
           </div>
         </div>

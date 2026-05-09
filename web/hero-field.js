@@ -11,6 +11,7 @@ import {
 
   const scene = document.querySelector("[data-hero-scene]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const canParallax = window.matchMedia("(hover: hover) and (pointer: fine)");
   const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) return;
 
@@ -86,7 +87,7 @@ import {
         : tone === "coral"
           ? (small ? 0.12 : 0.1) + r5 * 0.075
           : 0.065 + r5 * 0.045,
-      color: tone === "coral" ? "238, 125, 115" : tone === "teal" ? "122, 215, 207" : "183, 189, 202"
+      color: tone === "coral" ? "194, 104, 95" : tone === "teal" ? "122, 215, 207" : "160, 168, 182"
     };
   }
 
@@ -189,7 +190,7 @@ import {
   }
 
   function setParallax(event) {
-    if (!scene || reduceMotion.matches) return;
+    if (!scene || reduceMotion.matches || !canParallax.matches || event.pointerType === "touch") return;
     const rect = scene.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
@@ -213,18 +214,24 @@ import {
   if (scene) {
     scene.addEventListener("pointermove", setParallax, { passive: true });
     scene.addEventListener("pointerleave", resetParallax, { passive: true });
+    scene.addEventListener("pointercancel", resetParallax, { passive: true });
   }
 
+  const handleMotionPreferenceChange = () => {
+    resetParallax();
+    queueRebuild();
+  };
+
   if (reduceMotion.addEventListener) {
-    reduceMotion.addEventListener("change", () => {
-      resetParallax();
-      queueRebuild();
-    });
+    reduceMotion.addEventListener("change", handleMotionPreferenceChange);
   } else if (reduceMotion.addListener) {
-    reduceMotion.addListener(() => {
-      resetParallax();
-      queueRebuild();
-    });
+    reduceMotion.addListener(handleMotionPreferenceChange);
+  }
+
+  if (canParallax.addEventListener) {
+    canParallax.addEventListener("change", resetParallax);
+  } else if (canParallax.addListener) {
+    canParallax.addListener(resetParallax);
   }
 
   const start = () => {
