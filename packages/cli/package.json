@@ -1,22 +1,26 @@
 {
-  "name": "@confessionstxt/mcp",
+  "name": "@confessionstxt/cli",
   "version": "0.1.0",
-  "description": "Read-only MCP server for CONFESSIONS.txt public artifact verification.",
+  "description": "Command-line and MCP verification surface for CONFESSIONS.txt public artifact references.",
   "type": "module",
   "bin": {
-    "confessionstxt-mcp": "./server.mjs"
+    "confessions": "./bin/confessions.mjs"
   },
   "files": [
+    "bin/",
     "server.mjs",
     "lib/",
     "README.md"
   ],
   "scripts": {
+    "confessions": "node bin/confessions.mjs",
     "start": "node server.mjs",
     "test": "node --test"
   },
   "keywords": [
     "mcp",
+    "cli",
+    "npx",
     "model-context-protocol",
     "confessions",
     "verification",
@@ -30,7 +34,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/arjanflac/confessions.txt.git",
-    "directory": "mcp"
+    "directory": "packages/cli"
   },
   "engines": {
     "node": ">=18"

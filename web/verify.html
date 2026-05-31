@@ -1079,20 +1079,17 @@
 
           <section class="mcp-panel card" aria-labelledby="mcp-title">
             <div class="input-panel-head">
-              <h2 id="mcp-title" class="input-label">CONFESSIONS.txt MCP</h2>
-              <p class="mcp-copy">Source checkout run for a read-only stdio MCP process. It parses public references and generates local verification steps; it does not decrypt, upload, broadcast, or request secrets.</p>
+              <h2 id="mcp-title" class="input-label">CONFESSIONS.txt CLI + MCP</h2>
+              <p class="mcp-copy">One npm package verifies public references in a terminal and starts the read-only MCP server for agents. It does not decrypt, upload, broadcast, or request secrets.</p>
             </div>
             <div class="commands">
               <div class="commands-header">
-                <span class="commands-label">MCP Source Run</span>
-                <button class="copy-btn" data-copy="git clone https://github.com/arjanflac/confessions.txt&#10;cd confessions.txt&#10;npm --prefix mcp install&#10;npm --prefix mcp start" aria-label="Copy MCP source run commands">Copy</button>
+                <span class="commands-label">Terminal Verify</span>
+                <button class="copy-btn" data-copy="npx -y @confessionstxt/cli verify 0x..." aria-label="Copy npx verification command">Copy</button>
               </div>
-              <pre><code>git clone https://github.com/arjanflac/confessions.txt
-cd confessions.txt
-npm --prefix mcp install
-npm --prefix mcp start</code></pre>
+              <pre><code>npx -y @confessionstxt/cli verify 0x...</code></pre>
             </div>
-            <p class="input-note">MCP clients can point at <code>/absolute/path/to/confessions.txt/mcp/server.mjs</code>. npm package: <code>@confessionstxt/mcp</code> after publication.</p>
+            <p class="input-note">MCP clients run <code>npx -y @confessionstxt/cli mcp</code>.</p>
           </section>
         </div>
       </div>

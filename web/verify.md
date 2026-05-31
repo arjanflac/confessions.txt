@@ -20,39 +20,33 @@ to a remote model.
 
 ## MCP Server
 
-CONFESSIONS.txt has a prototype read-only MCP server for agents that need to
-parse public references and generate local verification steps.
+CONFESSIONS.txt has a read-only MCP server for agents that need to resolve
+public references and generate local verification steps.
+
+Caption command:
+
+```bash
+npx -y @confessionstxt/cli verify 0x...
+```
 
 Local source run:
 
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-npm --prefix mcp install
-npm --prefix mcp start
+npm --prefix packages/cli install
+npm --prefix packages/cli run confessions -- verify 0x...
+npm --prefix packages/cli run confessions -- mcp
 ```
 
-Local MCP client configuration:
-
-```json
-{
-  "mcpServers": {
-    "confessions-txt": {
-      "command": "node",
-      "args": ["/absolute/path/to/confessions.txt/mcp/server.mjs"]
-    }
-  }
-}
-```
-
-Published package shape, once `@confessionstxt/mcp` is on npm:
+MCP client configuration:
 
 ```json
 {
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/mcp"]
+      "args": ["-y", "@confessionstxt/cli", "mcp"]
     }
   }
 }

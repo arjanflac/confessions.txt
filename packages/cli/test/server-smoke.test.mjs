@@ -20,6 +20,7 @@ test("stdio MCP server exposes verification resources and tools", async () => {
       "explain_artifact_reference",
       "generate_local_verification_steps",
       "parse_public_metadata_label",
+      "resolve_public_artifact_reference",
       "validate_confession_manifest_shape",
       "verify_csha_format"
     ]);
@@ -57,6 +58,17 @@ test("stdio MCP server exposes verification resources and tools", async () => {
 
     assert.equal(result.content[0].type, "text");
     assert.equal(result.structuredContent.valid, true);
+
+    const resolved = await client.callTool({
+      name: "resolve_public_artifact_reference",
+      arguments: {
+        reference: `Proof | ARTXID:${"a".repeat(43)} | CSHA:${"a".repeat(128)}`,
+        check_artifact: false
+      }
+    });
+
+    assert.equal(resolved.structuredContent.type, "metadata_label");
+    assert.equal(resolved.structuredContent.valid, true);
   } finally {
     await client.close();
   }

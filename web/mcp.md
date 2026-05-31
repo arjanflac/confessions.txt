@@ -1,62 +1,51 @@
-# CONFESSIONS.txt MCP Server
+# CONFESSIONS.txt CLI + MCP
 
-CONFESSIONS.txt has a prototype MCP server for public artifact verification.
-The server is read-only, deterministic, and specific to the CONFESSIONS.txt
-verification model.
+CONFESSIONS.txt publishes one npm package for public verification:
+
+```text
+@confessionstxt/cli
+```
+
+It has two surfaces:
+
+- Human terminal verification via `npx`.
+- Agent verification context via a read-only MCP stdio server.
 
 It is not a remote confession intake surface. It does not seal testimony,
 decrypt testimony, upload files, custody wallets, broadcast transactions, or
 request secrets.
 
-## Status
-
-Current status: source prototype in the public repository, under `mcp/`.
-
-The npm package name proposed by the prototype is:
-
-```text
-@confessionstxt/mcp
-```
-
-Do not treat the npm command as live until the package has actually been
-published. `npx -y @confessionstxt/mcp` is the eventual package-run command; it
-is not the source checkout command.
-
-## Local Source Install
-
-From a local checkout:
+## Terminal Verify
 
 ```bash
-git clone https://github.com/arjanflac/confessions.txt
-cd confessions.txt
-npm --prefix mcp install
-npm --prefix mcp start
+npx -y @confessionstxt/cli verify 0x...
 ```
 
-For an MCP client during local development, use an absolute path:
+The short form also works:
 
-```json
-{
-  "mcpServers": {
-    "confessions-txt": {
-      "command": "node",
-      "args": ["/absolute/path/to/confessions.txt/mcp/server.mjs"]
-    }
-  }
-}
+```bash
+npx -y @confessionstxt/cli 0x...
 ```
 
-## Published Install
+Useful flags:
 
-Once `@confessionstxt/mcp` is published to npm, an MCP client configuration
-should look like:
+```bash
+npx -y @confessionstxt/cli verify 0x... --json
+npx -y @confessionstxt/cli verify 0x... --commands
+```
+
+The command resolves public Base calldata, parses the CONFESSIONS.txt metadata
+label, prints public provenance, and emits local audit commands. It does not
+decrypt payloads.
+
+## MCP Install
 
 ```json
 {
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/mcp"]
+      "args": ["-y", "@confessionstxt/cli", "mcp"]
     }
   }
 }
@@ -64,6 +53,31 @@ should look like:
 
 This starts a local stdio MCP process. It is still local process execution, not
 a hosted verifier.
+
+## Local Source Run
+
+From a local checkout:
+
+```bash
+git clone https://github.com/arjanflac/confessions.txt
+cd confessions.txt
+npm --prefix packages/cli install
+npm --prefix packages/cli run confessions -- verify 0x...
+npm --prefix packages/cli run confessions -- mcp
+```
+
+For an MCP client during unpublished local development, use an absolute path:
+
+```json
+{
+  "mcpServers": {
+    "confessions-txt": {
+      "command": "node",
+      "args": ["/absolute/path/to/confessions.txt/packages/cli/server.mjs"]
+    }
+  }
+}
+```
 
 ## Resources
 
@@ -106,8 +120,12 @@ Accepted public shapes:
 - legacy CID-like value
 - public metadata label
 
-Output includes reference type, normalized value, verifier URL when available,
-parsed public fields, warnings, errors, next steps, and privacy boundary.
+### `resolve_public_artifact_reference`
+
+Resolves a public Base transaction hash, verifier URL, Arweave TXID, or metadata
+label into public provenance and local audit commands. It may make public Base
+RPC and Arweave header requests. It does not download private material or
+decrypt anything.
 
 ### `validate_confession_manifest_shape`
 
@@ -150,7 +168,6 @@ Input may include:
 Output may include:
 
 ```bash
-open "https://confessionstxt.art/verify/<BASE_TX_HASH>"
 curl -fL -o locked_artifact.jpg "https://arweave.net/<ARWEAVE_TXID>"
 python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
 python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
@@ -191,7 +208,7 @@ marketing, and remote-decryption interpretations.
 
 ## Hard Boundary
 
-The MCP server may handle public reference material only.
+The CLI and MCP server may handle public reference material only.
 
 Allowed:
 

@@ -13,16 +13,27 @@ There is no hosted sealing service. The CLI does not receive files, hold keys, c
 
 Public verifier: **https://confessionstxt.art/verify**
 
-## MCP Verification Server Prototype
+## NPX Verification Package
 
-The repo includes a prototype read-only MCP server under `mcp/` for
-public verification work. It is specific to CONFESSIONS.txt
-artifact references.
+The repo includes `@confessionstxt/cli` under `packages/cli/`. It provides a
+human terminal verifier and a read-only MCP server for public verification work.
+
+Caption command:
+
+```bash
+npx -y @confessionstxt/cli verify 0x...
+```
+
+Agent command:
+
+```bash
+npx -y @confessionstxt/cli mcp
+```
 
 It can:
 
 - expose protocol, verification, CLI, and boundary resources
-- parse public Base/Arweave/verifier references
+- resolve public Base/Arweave/verifier references
 - parse public metadata labels
 - validate public manifest shape
 - check CSHA formatting
@@ -32,34 +43,22 @@ It cannot decrypt testimony, request passphrases, request private keys, upload
 private material, custody wallets, broadcast transactions, or access sealed
 payload contents server-side.
 
-Local source run:
+Local source run from this repository:
 
 ```bash
-npm --prefix mcp install
-npm --prefix mcp start
+npm --prefix packages/cli install
+npm --prefix packages/cli run confessions -- verify 0x...
+npm --prefix packages/cli run confessions -- mcp
 ```
 
-Local MCP client configuration should point at an absolute path:
-
-```json
-{
-  "mcpServers": {
-    "confessions-txt": {
-      "command": "node",
-      "args": ["/absolute/path/to/confessions.txt/mcp/server.mjs"]
-    }
-  }
-}
-```
-
-Published package shape, once `@confessionstxt/mcp` is on npm:
+Published MCP client configuration:
 
 ```json
 {
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/mcp"]
+      "args": ["-y", "@confessionstxt/cli", "mcp"]
     }
   }
 }
@@ -77,7 +76,7 @@ CONFESSIONS.txt turns one local testimony file into a durable public reference.
 6. **Broadcast**: generate Base calldata containing the artifact pointer and integrity hash.
 7. **Verify**: resolve the public record and compare the extracted payload against the canonical hash.
 
-The CLI is command-oriented rather than an interactive shell. Each subcommand performs one protocol step: `seal`, `push`, `mint`, `extract`, or `verify`. That shape is intentional because each step has different local, public, and operational consequences.
+The Python protocol CLI is command-oriented rather than an interactive shell. Each subcommand performs one protocol step: `seal`, `push`, `mint`, `extract`, or `verify`. That shape is intentional because each step has different local, public, and operational consequences.
 
 ## Artifact Model
 
@@ -200,7 +199,7 @@ Use `--steg-prompt` when publishing `STEG` manually. Literal `--steg` values can
 
 - `cli/confess.py` - CLI for sealing, uploading, extracting, and verifying artifacts
 - `cli/confess` - small entry wrapper for the CLI
-- `mcp/` - read-only MCP server prototype for public artifact verification
+- `packages/cli/` - npm package for `npx` verification and MCP
 - `web/` - static site and browser verifier deployed at `confessionstxt.art`
 - `web/protocol.md`, `web/verify.md`, `web/mcp.md` - public protocol and MCP documentation
 - `web/_headers` - Cloudflare Pages security headers for the static verifier

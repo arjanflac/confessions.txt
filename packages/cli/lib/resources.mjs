@@ -47,6 +47,16 @@ payload material to an agent or remote model.
 
   cli: `# CONFESSIONS.txt CLI Verification Surface
 
+Caption/terminal verification:
+
+npx -y @confessionstxt/cli verify 0x...
+npx -y @confessionstxt/cli verify 0x... --json
+npx -y @confessionstxt/cli verify 0x... --commands
+
+Agent MCP server:
+
+npx -y @confessionstxt/cli mcp
+
 The CLI commands relevant to verification are:
 
 python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
@@ -56,9 +66,10 @@ If STEG was intentionally published, extraction can use the public value:
 
 python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
 
-The MCP server does not run these commands. It only explains public references,
-validates public metadata shape, checks CSHA formatting, and generates local
-verification instructions.
+The MCP server does not run extraction or decryption commands. It explains
+public references, resolves public Base/Arweave references, validates public
+metadata shape, checks CSHA formatting, and generates local verification
+instructions.
 `,
 
   boundary: `# MCP Boundary

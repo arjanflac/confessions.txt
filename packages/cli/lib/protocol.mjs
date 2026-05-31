@@ -328,7 +328,7 @@ export function shellQuote(value) {
 export function generateLocalVerificationSteps(input) {
   const warnings = [
     "Do not send plaintext testimony, private keys, wallet files, age passphrases, private stego passphrases, payload.tar.gz, or decrypted archives to a remote model.",
-    "These commands are local verification instructions. The MCP server does not run extraction, checksum verification, decryption, uploads, or broadcasts."
+    "These commands are local verification instructions. This verifier does not run extraction, checksum verification, decryption, uploads, or broadcasts."
   ];
   const errors = [];
   const commands = [];

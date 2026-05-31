@@ -1,49 +1,72 @@
-# CONFESSIONS.txt MCP Server
+# CONFESSIONS.txt CLI
 
-This package is the read-only MCP surface for CONFESSIONS.txt public artifact
-verification. It is specific to the protocol used by `confessionstxt.art`.
+This package is the terminal and MCP verification surface for CONFESSIONS.txt
+public artifact references. It is specific to the protocol used by
+`confessionstxt.art`.
 
-It does not seal testimony. It does not decrypt testimony. It does not fetch or
-upload private material. It does not custody wallets or broadcast transactions.
+It does not seal testimony. It does not decrypt testimony. It does not upload
+private material. It does not custody wallets or broadcast transactions.
+
+## NPX Verify
+
+```bash
+npx -y @confessionstxt/cli verify 0x...
+```
+
+The first argument can also be the reference:
+
+```bash
+npx -y @confessionstxt/cli 0x...
+```
+
+Machine-readable output:
+
+```bash
+npx -y @confessionstxt/cli verify 0x... --json
+```
+
+Local audit commands only:
+
+```bash
+npx -y @confessionstxt/cli verify 0x... --commands
+```
 
 ## Local Source Run
 
 From the repository root:
 
 ```bash
-npm --prefix mcp install
-npm --prefix mcp start
+npm --prefix packages/cli install
+npm --prefix packages/cli run confessions -- verify 0x...
+npm --prefix packages/cli run confessions -- mcp
 ```
 
-For an MCP client configuration during local development, use an absolute path:
-
-```json
-{
-  "mcpServers": {
-    "confessions-txt": {
-      "command": "node",
-      "args": ["/absolute/path/to/confessions.txt/mcp/server.mjs"]
-    }
-  }
-}
-```
-
-## Published Package
-
-Once `@confessionstxt/mcp` is published to npm, the client command should be:
+## MCP
 
 ```json
 {
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/mcp"]
+      "args": ["-y", "@confessionstxt/cli", "mcp"]
     }
   }
 }
 ```
 
-Do not use the npm command until the package has actually been published.
+For local unpublished development, point an MCP client at the checked-out
+server:
+
+```json
+{
+  "mcpServers": {
+    "confessions-txt": {
+      "command": "node",
+      "args": ["/absolute/path/to/confessions.txt/packages/cli/server.mjs"]
+    }
+  }
+}
+```
 
 ## Resources
 
@@ -55,6 +78,7 @@ Do not use the npm command until the package has actually been published.
 ## Tools
 
 - `explain_artifact_reference`
+- `resolve_public_artifact_reference`
 - `validate_confession_manifest_shape`
 - `verify_csha_format`
 - `generate_local_verification_steps`
