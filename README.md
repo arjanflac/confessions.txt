@@ -21,13 +21,13 @@ human terminal verifier and a read-only MCP server for public verification work.
 Caption command:
 
 ```bash
-npx -y @confessionstxt/cli verify 0x...
+npx -y @confessionstxt/cli@latest verify 0x...
 ```
 
 Agent command:
 
 ```bash
-npx -y @confessionstxt/cli mcp
+npx -y @confessionstxt/cli@latest mcp
 ```
 
 It can:
@@ -58,7 +58,7 @@ Published MCP client configuration:
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/cli", "mcp"]
+      "args": ["-y", "@confessionstxt/cli@latest", "mcp"]
     }
   }
 }
@@ -213,7 +213,7 @@ Use `--steg-prompt` when publishing `STEG` manually. Literal `--steg` values can
 - `age`
 - HStego with native JPEG support
 - `ardrive` CLI
-- Node/npm if installing `ardrive-cli` or running the MCP server prototype
+- Node/npm if installing `ardrive-cli` or running the `@confessionstxt/cli` verifier/MCP package
 - optional: `ssss-split` for Shamir secret splitting
 
 Check the environment with:

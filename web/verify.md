@@ -26,7 +26,7 @@ public references and generate local verification steps.
 Caption command:
 
 ```bash
-npx -y @confessionstxt/cli verify 0x...
+npx -y @confessionstxt/cli@latest verify 0x...
 ```
 
 Local source run:
@@ -46,7 +46,7 @@ MCP client configuration:
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/cli", "mcp"]
+      "args": ["-y", "@confessionstxt/cli@latest", "mcp"]
     }
   }
 }

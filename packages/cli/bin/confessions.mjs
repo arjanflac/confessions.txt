@@ -27,9 +27,9 @@ Options:
   -v, --version          Show version.
 
 Examples:
-  npx -y @confessionstxt/cli verify 0x1fc1...
-  npx -y @confessionstxt/cli 0x1fc1... --json
-  npx -y @confessionstxt/cli mcp
+  npx -y @confessionstxt/cli@latest verify 0x1fc1...
+  npx -y @confessionstxt/cli@latest 0x1fc1... --json
+  npx -y @confessionstxt/cli@latest mcp
 `);
 }
 

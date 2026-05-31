@@ -10,25 +10,25 @@ private material. It does not custody wallets or broadcast transactions.
 ## NPX Verify
 
 ```bash
-npx -y @confessionstxt/cli verify 0x...
+npx -y @confessionstxt/cli@latest verify 0x...
 ```
 
 The first argument can also be the reference:
 
 ```bash
-npx -y @confessionstxt/cli 0x...
+npx -y @confessionstxt/cli@latest 0x...
 ```
 
 Machine-readable output:
 
 ```bash
-npx -y @confessionstxt/cli verify 0x... --json
+npx -y @confessionstxt/cli@latest verify 0x... --json
 ```
 
 Local audit commands only:
 
 ```bash
-npx -y @confessionstxt/cli verify 0x... --commands
+npx -y @confessionstxt/cli@latest verify 0x... --commands
 ```
 
 ## Local Source Run
@@ -48,7 +48,7 @@ npm --prefix packages/cli run confessions -- mcp
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/cli", "mcp"]
+      "args": ["-y", "@confessionstxt/cli@latest", "mcp"]
     }
   }
 }

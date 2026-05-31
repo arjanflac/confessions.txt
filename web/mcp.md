@@ -18,20 +18,20 @@ request secrets.
 ## Terminal Verify
 
 ```bash
-npx -y @confessionstxt/cli verify 0x...
+npx -y @confessionstxt/cli@latest verify 0x...
 ```
 
 The short form also works:
 
 ```bash
-npx -y @confessionstxt/cli 0x...
+npx -y @confessionstxt/cli@latest 0x...
 ```
 
 Useful flags:
 
 ```bash
-npx -y @confessionstxt/cli verify 0x... --json
-npx -y @confessionstxt/cli verify 0x... --commands
+npx -y @confessionstxt/cli@latest verify 0x... --json
+npx -y @confessionstxt/cli@latest verify 0x... --commands
 ```
 
 The command resolves public Base calldata, parses the CONFESSIONS.txt metadata
@@ -45,7 +45,7 @@ decrypt payloads.
   "mcpServers": {
     "confessions-txt": {
       "command": "npx",
-      "args": ["-y", "@confessionstxt/cli", "mcp"]
+      "args": ["-y", "@confessionstxt/cli@latest", "mcp"]
     }
   }
 }

@@ -408,6 +408,12 @@
         line-height: 1.64;
       }
 
+      .package-command-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
       .console {
         min-height: 310px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%), var(--surface-1);
@@ -991,6 +997,10 @@
           grid-template-columns: 1fr;
         }
 
+        .package-command-grid {
+          grid-template-columns: 1fr;
+        }
+
         .submit-btn {
           width: 100%;
         }
@@ -1080,16 +1090,25 @@
           <section class="mcp-panel card" aria-labelledby="mcp-title">
             <div class="input-panel-head">
               <h2 id="mcp-title" class="input-label">CONFESSIONS.txt CLI + MCP</h2>
-              <p class="mcp-copy">One npm package verifies public references in a terminal and starts the read-only MCP server for agents. It does not decrypt, upload, broadcast, or request secrets.</p>
+              <p class="mcp-copy">Published as <code>@confessionstxt/cli</code>: one package verifies public references in a terminal and starts the read-only MCP server for agents.</p>
             </div>
-            <div class="commands">
-              <div class="commands-header">
-                <span class="commands-label">Terminal Verify</span>
-                <button class="copy-btn" data-copy="npx -y @confessionstxt/cli verify 0x..." aria-label="Copy npx verification command">Copy</button>
+            <div class="package-command-grid" aria-label="Published package commands">
+              <div class="commands">
+                <div class="commands-header">
+                  <span class="commands-label">NPX Verify</span>
+                  <button id="npx-copy" class="copy-btn" data-copy="npx -y @confessionstxt/cli@latest verify 0x..." aria-label="Copy npx verification command">Copy</button>
+                </div>
+                <pre><code id="npx-command">npx -y @confessionstxt/cli@latest verify 0x...</code></pre>
               </div>
-              <pre><code>npx -y @confessionstxt/cli verify 0x...</code></pre>
+              <div class="commands">
+                <div class="commands-header">
+                  <span class="commands-label">MCP Server</span>
+                  <button class="copy-btn" data-copy="npx -y @confessionstxt/cli@latest mcp" aria-label="Copy MCP server command">Copy</button>
+                </div>
+                <pre><code>npx -y @confessionstxt/cli@latest mcp</code></pre>
+              </div>
             </div>
-            <p class="input-note">MCP clients run <code>npx -y @confessionstxt/cli mcp</code>.</p>
+            <p class="input-note">No hosted decryption, uploads, broadcasts, or passphrase requests.</p>
           </section>
         </div>
       </div>
@@ -1122,10 +1141,22 @@
       const consoleEl = document.getElementById("console");
       const inputEl = document.getElementById("input");
       const verifyBtn = document.getElementById("verify");
+      const npxCommandEl = document.getElementById("npx-command");
+      const npxCopyBtn = document.getElementById("npx-copy");
       const ARWEAVE_TXID_PATTERN = /^[a-zA-Z0-9_-]{43}$/;
       const MAX_PREVIEW_BYTES = 25 * 1024 * 1024;
 
       let activePreviewObjectUrl = null;
+
+      function buildNpxVerifyCommand(reference) {
+        return "npx -y @confessionstxt/cli@latest verify " + (reference || "0x...");
+      }
+
+      function updateNpxCommand() {
+        const command = buildNpxVerifyCommand(inputEl.value.trim());
+        if (npxCommandEl) npxCommandEl.textContent = command;
+        if (npxCopyBtn) npxCopyBtn.setAttribute("data-copy", command);
+      }
 
       function releasePreviewUrl() {
         if (activePreviewObjectUrl) {
@@ -1348,6 +1379,21 @@
           "</section>";
       }
 
+      function renderNpxCommand(reference) {
+        if (!reference) return "";
+        const command = buildNpxVerifyCommand(reference);
+        return '' +
+          '<section class="steps-section">' +
+            '<div class="commands">' +
+              '<div class="commands-header">' +
+                '<span class="commands-label">NPX Verify</span>' +
+                '<button class="copy-btn" data-copy="' + escapeHtml(command) + '" aria-label="Copy npx verify command">Copy</button>' +
+              "</div>" +
+              "<pre><code>" + escapeHtml(command) + "</code></pre>" +
+            "</div>" +
+          "</section>";
+      }
+
       function renderResolvedRecord(options) {
         const title = options.title;
         const txHash = options.txHash;
@@ -1388,6 +1434,7 @@
           html += '<div class="notes"><p class="notes-text" data-pretext="left">Public STEG present. Extraction is public; plaintext remains sealed behind the age passphrase.</p></div>';
         }
         html += "</div></section></aside></div>";
+        html += renderNpxCommand(txHash || arTxid || canonicalUrl);
         html += renderAudit(commands);
         html += "</div></div>";
         consoleEl.innerHTML = html;
@@ -1955,6 +2002,9 @@
         if (event.key === "Enter") handleVerify();
       });
 
+      inputEl.addEventListener("input", updateNpxCommand);
+      updateNpxCommand();
+
       const mcpPanel = document.querySelector(".mcp-panel");
       if (mcpPanel) {
         attachCopyHandlers(mcpPanel);
@@ -1978,6 +2028,7 @@
       const initialLocator = txParam || txidParam || pathParam;
       if (initialLocator) {
         inputEl.value = initialLocator;
+        updateNpxCommand();
         handleVerify();
       }
     </script>

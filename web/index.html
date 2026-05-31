@@ -164,6 +164,7 @@
         letter-spacing: 0.16em;
       }
       .btn:focus-visible,
+      .package-tag:focus-visible,
       .credit a:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 4px;
@@ -298,6 +299,46 @@
         width: 1rem;
         height: 1rem;
         flex: 0 0 auto;
+      }
+
+      .package-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.58rem;
+        width: max-content;
+        max-width: 100%;
+        color: var(--label-2);
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.17em;
+        line-height: 1.35;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: color 0.16s ease;
+      }
+
+      .package-tag::before {
+        content: "";
+        width: 0.28rem;
+        height: 0.28rem;
+        flex: 0 0 auto;
+        background: var(--accent-deep);
+        transform: rotate(45deg);
+      }
+
+      .package-tag span {
+        color: var(--accent);
+      }
+
+      .package-tag code {
+        color: inherit;
+        font: inherit;
+        letter-spacing: inherit;
+      }
+
+      .package-tag:hover {
+        color: var(--text-2);
       }
 
       .trust-strip {
@@ -926,8 +967,14 @@
           padding-bottom: 0.82rem;
         }
 
-        .trust-strip {
+        .package-tag {
           order: 7;
+          justify-self: center;
+          font-size: 0.52rem;
+        }
+
+        .trust-strip {
+          order: 8;
           grid-template-columns: repeat(4, max-content);
           justify-content: center;
           gap: 0.56rem;
@@ -993,6 +1040,10 @@
               Verify artifact
             </a>
           </div>
+          <a class="package-tag" href="https://www.npmjs.com/package/@confessionstxt/cli" target="_blank" rel="noopener noreferrer" aria-label="View @confessionstxt/cli on npm">
+            <span>NPX</span>
+            <code>@confessionstxt/cli</code>
+          </a>
           <div class="trust-strip" aria-label="Trust boundaries">
             <span>No custody</span>
             <span>No sealing</span>

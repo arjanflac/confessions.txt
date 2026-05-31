@@ -49,13 +49,13 @@ payload material to an agent or remote model.
 
 Caption/terminal verification:
 
-npx -y @confessionstxt/cli verify 0x...
-npx -y @confessionstxt/cli verify 0x... --json
-npx -y @confessionstxt/cli verify 0x... --commands
+npx -y @confessionstxt/cli@latest verify 0x...
+npx -y @confessionstxt/cli@latest verify 0x... --json
+npx -y @confessionstxt/cli@latest verify 0x... --commands
 
 Agent MCP server:
 
-npx -y @confessionstxt/cli mcp
+npx -y @confessionstxt/cli@latest mcp
 
 The CLI commands relevant to verification are:
 
