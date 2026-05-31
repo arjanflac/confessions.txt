@@ -35,9 +35,8 @@ payload contents server-side.
 Local source run:
 
 ```bash
-cd mcp
-npm install
-npm start
+npm --prefix mcp install
+npm --prefix mcp start
 ```
 
 Local MCP client configuration should point at an absolute path:

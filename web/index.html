@@ -301,31 +301,40 @@
       }
 
       .trust-strip {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem 0.85rem;
+        display: grid;
+        grid-template-columns: repeat(3, max-content);
+        justify-content: start;
+        align-items: center;
+        gap: 0.42rem clamp(0.92rem, 1.55vw, 1.18rem);
+        width: max-content;
+        max-width: 100%;
         color: var(--label-2);
         font-size: 0.62rem;
         font-weight: 600;
         letter-spacing: 0.18em;
+        line-height: 1.35;
       }
 
       .trust-strip span {
         display: inline-flex;
         align-items: center;
         gap: 0.6rem;
+        justify-self: start;
+        width: max-content;
       }
 
       .trust-strip span::before {
         content: "";
         width: 0.28rem;
         height: 0.28rem;
+        flex: 0 0 auto;
         background: var(--accent-deep);
         transform: rotate(45deg);
       }
 
-      .trust-strip .trust-mcp {
-        flex-basis: 100%;
+      .trust-strip span:nth-child(4) {
+        grid-column: 2;
+        justify-self: center;
       }
 
       .hero-scene {
@@ -919,24 +928,19 @@
 
         .trust-strip {
           order: 7;
-          display: grid;
-          grid-template-columns: auto auto;
+          grid-template-columns: max-content max-content;
           justify-content: center;
-          gap: 0.5rem 1.18rem;
-          width: 100%;
+          gap: 0.5rem 1.24rem;
+          width: max-content;
+          max-width: 100%;
           margin: 0 auto;
           font-size: 0.58rem;
           line-height: 1.35;
-          text-align: center;
+          text-align: left;
         }
 
         .trust-strip span {
           gap: 0.46rem;
-        }
-
-        .trust-strip span:last-child {
-          grid-column: 1 / -1;
-          justify-self: center;
         }
 
         .section {
@@ -988,7 +992,7 @@
             <span>No custody</span>
             <span>No hosted sealing</span>
             <span>Static verifier</span>
-            <span class="trust-mcp">MCP</span>
+            <span>MCP</span>
           </div>
         </div>
 

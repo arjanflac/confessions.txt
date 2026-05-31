@@ -11,9 +11,8 @@ upload private material. It does not custody wallets or broadcast transactions.
 From the repository root:
 
 ```bash
-cd mcp
-npm install
-npm start
+npm --prefix mcp install
+npm --prefix mcp start
 ```
 
 For an MCP client configuration during local development, use an absolute path:

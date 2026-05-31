@@ -408,25 +408,6 @@
         line-height: 1.64;
       }
 
-      .mcp-code {
-        margin: 0;
-        padding: 0.86rem 0.95rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background: rgba(7, 7, 9, 0.78);
-        color: var(--text-1);
-        font-family: var(--font-tech);
-        font-size: 0.72rem;
-        line-height: 1.7;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      .mcp-code code {
-        font-family: inherit;
-      }
-
       .console {
         min-height: 310px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%), var(--surface-1);
@@ -1099,12 +1080,19 @@
           <section class="mcp-panel card" aria-labelledby="mcp-title">
             <div class="input-panel-head">
               <h2 id="mcp-title" class="input-label">CONFESSIONS.txt MCP</h2>
-              <p class="mcp-copy">A read-only MCP server can help agents parse public references and generate local verification steps. It does not decrypt, upload, broadcast, or request secrets.</p>
+              <p class="mcp-copy">Source checkout run for a read-only stdio MCP process. It parses public references and generates local verification steps; it does not decrypt, upload, broadcast, or request secrets.</p>
             </div>
-            <pre class="mcp-code"><code>cd mcp
-npm install
-npm start</code></pre>
-            <p class="input-note">Local source package. Package: <code>@confessionstxt/mcp</code>.</p>
+            <div class="commands">
+              <div class="commands-header">
+                <span class="commands-label">MCP Source Run</span>
+                <button class="copy-btn" data-copy="git clone https://github.com/arjanflac/confessions.txt&#10;cd confessions.txt&#10;npm --prefix mcp install&#10;npm --prefix mcp start" aria-label="Copy MCP source run commands">Copy</button>
+              </div>
+              <pre><code>git clone https://github.com/arjanflac/confessions.txt
+cd confessions.txt
+npm --prefix mcp install
+npm --prefix mcp start</code></pre>
+            </div>
+            <p class="input-note">MCP clients can point at <code>/absolute/path/to/confessions.txt/mcp/server.mjs</code>. npm package: <code>@confessionstxt/mcp</code> after publication.</p>
           </section>
         </div>
       </div>
@@ -1488,15 +1476,20 @@ npm start</code></pre>
         return legacy;
       }
 
-      function attachCopyHandlers() {
-        const buttons = consoleEl.querySelectorAll("[data-copy]");
+      function attachCopyHandlers(root) {
+        const scope = root || consoleEl;
+        const buttons = scope.querySelectorAll("[data-copy]");
         buttons.forEach(function (btn) {
+          if (btn.dataset.copyBound === "1") return;
+          btn.dataset.copyBound = "1";
           btn.addEventListener("click", function () {
             const text = btn.getAttribute("data-copy");
             copyToClipboard(text, btn);
           });
         });
-        attachStatusTooltipHandlers();
+        if (!root || scope === consoleEl) {
+          attachStatusTooltipHandlers();
+        }
       }
 
       function useTapTooltipMode() {
@@ -1964,6 +1957,11 @@ npm start</code></pre>
       inputEl.addEventListener("keydown", function (event) {
         if (event.key === "Enter") handleVerify();
       });
+
+      const mcpPanel = document.querySelector(".mcp-panel");
+      if (mcpPanel) {
+        attachCopyHandlers(mcpPanel);
+      }
 
       function getPathLocator() {
         const path = window.location.pathname.replace(/\/+$/, "");

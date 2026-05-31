@@ -28,9 +28,8 @@ Local source run:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-cd mcp
-npm install
-npm start
+npm --prefix mcp install
+npm --prefix mcp start
 ```
 
 Local MCP client configuration:

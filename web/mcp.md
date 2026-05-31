@@ -29,9 +29,8 @@ From a local checkout:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-cd mcp
-npm install
-npm start
+npm --prefix mcp install
+npm --prefix mcp start
 ```
 
 For an MCP client during local development, use an absolute path:
