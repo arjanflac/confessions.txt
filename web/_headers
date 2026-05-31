@@ -3,3 +3,12 @@
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+/protocol.md
+  Content-Type: text/markdown; charset=utf-8
+
+/verify.md
+  Content-Type: text/markdown; charset=utf-8
+
+/mcp.md
+  Content-Type: text/markdown; charset=utf-8

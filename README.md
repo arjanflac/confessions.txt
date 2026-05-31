@@ -13,6 +13,58 @@ There is no hosted sealing service. The CLI does not receive files, hold keys, c
 
 Public verifier: **https://confessionstxt.art/verify**
 
+## MCP Verification Server Prototype
+
+The repo includes a prototype read-only MCP server under `mcp/` for
+public verification work. It is specific to CONFESSIONS.txt
+artifact references.
+
+It can:
+
+- expose protocol, verification, CLI, and boundary resources
+- parse public Base/Arweave/verifier references
+- parse public metadata labels
+- validate public manifest shape
+- check CSHA formatting
+- generate local verification commands
+
+It cannot decrypt testimony, request passphrases, request private keys, upload
+private material, custody wallets, broadcast transactions, or access sealed
+payload contents server-side.
+
+Local source run:
+
+```bash
+npm --prefix mcp install
+npm --prefix mcp start
+```
+
+Local MCP client configuration should point at an absolute path:
+
+```json
+{
+  "mcpServers": {
+    "confessions-txt": {
+      "command": "node",
+      "args": ["/absolute/path/to/confessions.txt/mcp/server.mjs"]
+    }
+  }
+}
+```
+
+Future npm package shape, after review and publication:
+
+```json
+{
+  "mcpServers": {
+    "confessions-txt": {
+      "command": "npx",
+      "args": ["-y", "@confessionstxt/mcp"]
+    }
+  }
+}
+```
+
 ## What It Does
 
 CONFESSIONS.txt turns one local testimony file into a durable public reference.
@@ -148,7 +200,9 @@ Use `--steg-prompt` when publishing `STEG` manually. Literal `--steg` values can
 
 - `cli/confess.py` - CLI for sealing, uploading, extracting, and verifying artifacts
 - `cli/confess` - small entry wrapper for the CLI
+- `mcp/` - read-only MCP server prototype for public artifact verification
 - `web/` - static site and browser verifier deployed at `confessionstxt.art`
+- `web/protocol.md`, `web/verify.md`, `web/mcp.md` - public protocol and MCP documentation
 - `web/_headers` - Cloudflare Pages security headers for the static verifier
 - `web/vendor/pretext/` - vendored Pretext browser layout dependency
 - `scripts/bootstrap_mac.sh` - macOS setup helper
@@ -160,7 +214,7 @@ Use `--steg-prompt` when publishing `STEG` manually. Literal `--steg` values can
 - `age`
 - HStego with native JPEG support
 - `ardrive` CLI
-- Node/npm if installing `ardrive-cli`
+- Node/npm if installing `ardrive-cli` or running the MCP server prototype
 - optional: `ssss-split` for Shamir secret splitting
 
 Check the environment with:
