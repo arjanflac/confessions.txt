@@ -4,7 +4,7 @@
   "description": "Command-line and MCP verification surface for CONFESSIONS.txt public artifact references.",
   "type": "module",
   "bin": {
-    "confessions": "./bin/confessions.mjs"
+    "confessions": "bin/confessions.mjs"
   },
   "files": [
     "bin/",
