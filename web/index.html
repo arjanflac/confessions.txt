@@ -324,6 +324,10 @@
         transform: rotate(45deg);
       }
 
+      .trust-strip .trust-mcp {
+        flex-basis: 100%;
+      }
+
       .hero-scene {
         min-height: min(70vh, 720px);
         display: grid;
@@ -602,79 +606,6 @@
         line-height: 1.36;
       }
 
-      .protocol-agent {
-        display: grid;
-        grid-template-columns: minmax(0, 0.82fr) minmax(16rem, 1.18fr);
-        gap: clamp(0.9rem, 2vw, 1.3rem);
-        align-items: stretch;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(240, 242, 247, 0.1);
-      }
-
-      .agent-kicker,
-      .agent-link {
-        font-family: var(--font-mono);
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-      }
-
-      .agent-kicker {
-        display: grid;
-        align-content: center;
-        gap: 0.5rem;
-        min-height: 6.8rem;
-        padding: 0 1rem 0 0;
-        border-right: 1px solid rgba(240, 242, 247, 0.1);
-        color: var(--label-1);
-        font-size: 0.62rem;
-        font-weight: 700;
-      }
-
-      .agent-kicker strong {
-        display: block;
-        color: var(--text-2);
-        font-family: var(--font-title);
-        font-size: clamp(1.32rem, 2.2vw, 1.72rem);
-        font-weight: 560;
-        letter-spacing: -0.035em;
-        line-height: 0.95;
-        text-transform: none;
-      }
-
-      .agent-copy {
-        display: grid;
-        align-content: center;
-        gap: 0.72rem;
-        padding: 0 0 0 1rem;
-      }
-
-      .agent-copy p {
-        max-width: 48rem;
-        color: var(--text-2);
-        font-size: clamp(0.88rem, 1.04vw, 0.98rem);
-        line-height: 1.56;
-      }
-
-      .agent-link {
-        width: max-content;
-        max-width: 100%;
-        color: var(--label-1);
-        font-size: 0.62rem;
-        font-weight: 700;
-        text-decoration: none;
-        transition: color 0.16s ease;
-      }
-
-      .agent-link:hover {
-        color: var(--text-1);
-      }
-
-      .agent-link:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 4px;
-      }
-
       @media (hover: hover) {
         .protocol-step:hover {
           background-color: rgba(255, 255, 255, 0.025);
@@ -795,21 +726,6 @@
 
         .protocol-list {
           display: block;
-        }
-
-        .protocol-agent {
-          grid-template-columns: 1fr;
-        }
-
-        .agent-kicker {
-          min-height: 0;
-          padding: 0 0 0.9rem;
-          border-right: 0;
-          border-bottom: 1px solid rgba(240, 242, 247, 0.1);
-        }
-
-        .agent-copy {
-          padding: 0;
         }
 
         .protocol-list::before {
@@ -959,16 +875,6 @@
           margin-top: 1.05rem;
         }
 
-        .protocol-agent {
-          margin-top: 0.9rem;
-        }
-
-        .agent-kicker,
-        .agent-copy {
-          padding-left: 0;
-          padding-right: 0;
-        }
-
         .protocol-step {
           padding: 0.92rem 0.9rem 0.98rem 2.18rem;
         }
@@ -1082,6 +988,7 @@
             <span>No custody</span>
             <span>No hosted sealing</span>
             <span>Static verifier</span>
+            <span class="trust-mcp">MCP</span>
           </div>
         </div>
 
@@ -1132,16 +1039,6 @@
                   <span class="step-copy">Publish a titled reference on Base.</span>
                 </li>
               </ol>
-              <div class="protocol-agent">
-                <div class="agent-kicker">
-                  Agent layer
-                  <strong>MCP</strong>
-                </div>
-                <div class="agent-copy">
-                  <p>Read-only tools for public references: parse labels, check CSHA shape, and generate local verification steps without receiving testimony, keys, or passphrases.</p>
-                  <a class="agent-link" href="/mcp.md">MCP specification</a>
-                </div>
-              </div>
             </div>
           </div>
         </section>

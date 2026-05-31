@@ -35,8 +35,9 @@ payload contents server-side.
 Local source run:
 
 ```bash
-npm --prefix mcp install
-npm --prefix mcp start
+cd mcp
+npm install
+npm start
 ```
 
 Local MCP client configuration should point at an absolute path:
@@ -52,7 +53,7 @@ Local MCP client configuration should point at an absolute path:
 }
 ```
 
-Future npm package shape, after review and publication:
+Published package shape, once `@confessionstxt/mcp` is on npm:
 
 ```json
 {

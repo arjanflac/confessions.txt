@@ -11,8 +11,9 @@ upload private material. It does not custody wallets or broadcast transactions.
 From the repository root:
 
 ```bash
-npm --prefix mcp install
-npm --prefix mcp start
+cd mcp
+npm install
+npm start
 ```
 
 For an MCP client configuration during local development, use an absolute path:
@@ -28,9 +29,9 @@ For an MCP client configuration during local development, use an absolute path:
 }
 ```
 
-## Future Published Package
+## Published Package
 
-After this package is published to npm, the client command should be:
+Once `@confessionstxt/mcp` is published to npm, the client command should be:
 
 ```json
 {
@@ -43,7 +44,7 @@ After this package is published to npm, the client command should be:
 }
 ```
 
-Do not publish this until the package name, branch, and public docs are reviewed.
+Do not use the npm command until the package has actually been published.
 
 ## Resources
 

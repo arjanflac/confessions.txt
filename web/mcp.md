@@ -18,9 +18,9 @@ The npm package name proposed by the prototype is:
 @confessionstxt/mcp
 ```
 
-Do not treat the npm command as live until the package has been reviewed and
-published. The correct future package-run shape is `npx -y @confessionstxt/mcp`,
-not `npx install ...`.
+Do not treat the npm command as live until the package has actually been
+published. `npx -y @confessionstxt/mcp` is the eventual package-run command; it
+is not the source checkout command.
 
 ## Local Source Install
 
@@ -29,8 +29,9 @@ From a local checkout:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-npm --prefix mcp install
-npm --prefix mcp start
+cd mcp
+npm install
+npm start
 ```
 
 For an MCP client during local development, use an absolute path:
@@ -46,10 +47,10 @@ For an MCP client during local development, use an absolute path:
 }
 ```
 
-## Future Published Install
+## Published Install
 
-After the package is published to npm, an MCP client configuration should look
-like:
+Once `@confessionstxt/mcp` is published to npm, an MCP client configuration
+should look like:
 
 ```json
 {

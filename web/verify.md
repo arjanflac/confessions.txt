@@ -28,8 +28,9 @@ Local source run:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-npm --prefix mcp install
-npm --prefix mcp start
+cd mcp
+npm install
+npm start
 ```
 
 Local MCP client configuration:
@@ -45,7 +46,7 @@ Local MCP client configuration:
 }
 ```
 
-Future npm package shape, after review and publication:
+Published package shape, once `@confessionstxt/mcp` is on npm:
 
 ```json
 {
