@@ -1,0 +1,45 @@
+{
+  "name": "@confessionstxt/mcp",
+  "version": "0.1.0",
+  "description": "Read-only MCP server for CONFESSIONS.txt public artifact verification.",
+  "type": "module",
+  "bin": {
+    "confessionstxt-mcp": "./server.mjs"
+  },
+  "files": [
+    "server.mjs",
+    "lib/",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "confessions",
+    "verification",
+    "local-first",
+    "arweave",
+    "base",
+    "age"
+  ],
+  "author": "Arjan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arjanflac/confessions.txt.git",
+    "directory": "mcp"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}
