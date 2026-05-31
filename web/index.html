@@ -301,6 +301,14 @@
         flex: 0 0 auto;
       }
 
+      .marker-strip {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.58rem clamp(0.72rem, 1vw, 0.82rem);
+        max-width: 100%;
+      }
+
       .package-tag {
         display: inline-flex;
         align-items: center;
@@ -342,12 +350,12 @@
       }
 
       .trust-strip {
-        display: grid;
-        grid-template-columns: repeat(3, max-content);
-        justify-content: start;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
         align-items: center;
-        gap: 0.42rem clamp(0.92rem, 1.55vw, 1.18rem);
-        width: max-content;
+        gap: 0.58rem clamp(0.72rem, 1vw, 0.82rem);
+        width: auto;
         max-width: 100%;
         color: var(--label-2);
         font-size: 0.62rem;
@@ -360,7 +368,6 @@
         display: inline-flex;
         align-items: center;
         gap: 0.6rem;
-        justify-self: start;
         width: max-content;
       }
 
@@ -371,11 +378,6 @@
         flex: 0 0 auto;
         background: var(--accent-deep);
         transform: rotate(45deg);
-      }
-
-      .trust-strip span:nth-child(4) {
-        grid-column: 2;
-        justify-self: center;
       }
 
       .hero-scene {
@@ -726,6 +728,7 @@
         }
 
         .actions,
+        .marker-strip,
         .trust-strip {
           justify-content: flex-start;
         }
@@ -967,15 +970,23 @@
           padding-bottom: 0.82rem;
         }
 
-        .package-tag {
+        .marker-strip {
           order: 7;
+          display: grid;
+          justify-items: center;
+          justify-content: center;
+          gap: 0.7rem;
+          width: max-content;
+          max-width: 100%;
+          margin: 0 auto;
+        }
+
+        .package-tag {
           justify-self: center;
           font-size: 0.52rem;
         }
 
         .trust-strip {
-          order: 8;
-          grid-template-columns: repeat(4, max-content);
           justify-content: center;
           gap: 0.56rem;
           width: max-content;
@@ -988,11 +999,6 @@
 
         .trust-strip span {
           gap: 0.38rem;
-        }
-
-        .trust-strip span:nth-child(4) {
-          grid-column: auto;
-          justify-self: start;
         }
 
         .section {
@@ -1040,15 +1046,17 @@
               Verify artifact
             </a>
           </div>
-          <a class="package-tag" href="https://www.npmjs.com/package/@confessionstxt/cli" target="_blank" rel="noopener noreferrer" aria-label="View @confessionstxt/cli on npm">
-            <span>NPX</span>
-            <code>@confessionstxt/cli</code>
-          </a>
-          <div class="trust-strip" aria-label="Trust boundaries">
-            <span>No custody</span>
-            <span>No sealing</span>
-            <span>Verifier</span>
-            <span>MCP</span>
+          <div class="marker-strip" aria-label="Package and trust markers">
+            <a class="package-tag" href="https://www.npmjs.com/package/@confessionstxt/cli" target="_blank" rel="noopener noreferrer" aria-label="View @confessionstxt/cli on npm">
+              <span>NPX</span>
+              <code>@confessionstxt/cli</code>
+            </a>
+            <div class="trust-strip" aria-label="Trust boundaries">
+              <span>No custody</span>
+              <span>No sealing</span>
+              <span>Verifier</span>
+              <span>MCP</span>
+            </div>
           </div>
         </div>
 
