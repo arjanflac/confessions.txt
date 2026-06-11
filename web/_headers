@@ -4,6 +4,9 @@
   X-Content-Type-Options: nosniff
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
 /protocol.md
   Content-Type: text/markdown; charset=utf-8
 

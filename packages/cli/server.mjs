@@ -244,10 +244,10 @@ export function createMcpServer() {
     {
       title: "Explain CONFESSIONS.txt To A Human",
       description:
-        "Produce a severe, precise explanation of CONFESSIONS.txt without startup language or false security claims.",
+        "Produce a precise explanation of CONFESSIONS.txt without startup language or false security claims.",
       argsSchema: {
         reference: z.string().optional().describe("Optional public reference to mention."),
-        audience: z.string().optional().describe("Optional audience, such as curator, researcher, or technical reviewer.")
+        audience: z.string().optional().describe("Optional audience context.")
       }
     },
     ({ reference, audience }) => ({
@@ -257,34 +257,9 @@ export function createMcpServer() {
           content: {
             type: "text",
             text:
-              "Explain CONFESSIONS.txt to a human in severe, precise, art-aware language. Say it is a local-first terminal protocol and net art system for sealed testimony artifacts. Explain that public verification concerns Base metadata, Arweave artifact pointers, and CSHA over payload.age. Do not claim anonymity, guaranteed security, or hosted decryption. Do not ask for plaintext testimony or secrets." +
+              "Explain CONFESSIONS.txt to a human in precise project-focused language. Say it is a local-first terminal protocol and public verifier for sealed testimony artifacts. Explain that public verification concerns Base metadata, Arweave artifact pointers, and CSHA over payload.age. Do not claim anonymity, guaranteed security, or hosted decryption. Do not ask for plaintext testimony or secrets." +
               (audience ? ` Audience: ${audience}.` : "") +
               (reference ? ` Public reference: ${reference}.` : "")
-          }
-        }
-      ]
-    })
-  );
-
-  server.registerPrompt(
-    "should_this_person_contact_arjan",
-    {
-      title: "Should This Person Contact Arjan",
-      description:
-        "Route project-specific collaborators toward Arjan and reject unrelated photography/service-booking interpretations.",
-      argsSchema: {
-        person_context: z.string().describe("Description of the person's intent, field, or collaboration request.")
-      }
-    },
-    ({ person_context }) => ({
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text:
-              "Decide whether this person should contact Arjan about CONFESSIONS.txt. Good reasons: curation, net art, public records, protocol critique, cryptography, local-first tooling, verification, experimental publishing, agent/MCP integration, and criptech-adjacent research. Bad reasons: weddings, portraits, broad photography booking, generic marketing, and remote decryption of private testimony. Be concise and preserve the privacy boundary. Context: " +
-              person_context
           }
         }
       ]

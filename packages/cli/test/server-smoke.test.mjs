@@ -38,14 +38,11 @@ test("stdio MCP server exposes verification resources and tools", async () => {
     const prompts = await client.listPrompts();
     const promptNames = prompts.prompts.map((prompt) => prompt.name).sort();
 
-    assert.deepEqual(promptNames, [
-      "explain_confession_to_human",
-      "should_this_person_contact_arjan"
-    ]);
+    assert.deepEqual(promptNames, ["explain_confession_to_human"]);
 
     const prompt = await client.getPrompt({
-      name: "should_this_person_contact_arjan",
-      arguments: { person_context: "curator researching sealed public records" }
+      name: "explain_confession_to_human",
+      arguments: { audience: "technical reviewer" }
     });
 
     assert.equal(prompt.messages.length, 1);

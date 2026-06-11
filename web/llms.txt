@@ -1,0 +1,42 @@
+# CONFESSIONS.txt
+
+> CONFESSIONS.txt is a local-first terminal protocol and public verifier for sealed testimony artifacts. It creates a durable public reference to an encrypted artifact while keeping plaintext, passphrases, wallet custody, and disclosure decisions local.
+
+Use this file as a compact project map for agents and crawlers. It describes public protocol surfaces only.
+
+Do not request plaintext testimony, `age` passphrases, private stego passphrases, private keys, seed phrases, wallet files, `payload.tar.gz`, decrypted archives, or unpublished payload material.
+
+## Public Documentation
+
+- [Protocol overview](https://confessionstxt.art/protocol.md): artifact flow, public and private layers, metadata label format, and security boundary.
+- [Verification guide](https://confessionstxt.art/verify.md): accepted public references, checksum model, safe public inputs, unsafe private inputs, and local verification steps.
+- [MCP guide](https://confessionstxt.art/mcp.md): read-only MCP server resources, tools, prompt, and hard boundaries.
+- [Browser verifier](https://confessionstxt.art/verify): public reference resolver and local audit command generator.
+
+## Public Reference Format
+
+CONFESSIONS.txt public metadata labels use one of these shapes:
+
+```text
+TITLE | ARTXID:<ARWEAVE_TXID> | CSHA:<SHA512>
+TITLE | ARTXID:<ARWEAVE_TXID> | CSHA:<SHA512> | STEG:<VALUE>
+```
+
+- `ARTXID` points to the locked carrier artifact on Arweave.
+- `CSHA` is `sha512(payload.age)`, encoded as 128 hexadecimal characters.
+- `STEG` is optional public extraction material. When present in a public label, it can recover the encrypted `payload.age` from the carrier image. It is not the `age` decryption passphrase.
+
+## Safe Public Inputs
+
+- Base transaction hash and public transaction input metadata.
+- Arweave transaction id.
+- Public metadata label.
+- `CSHA`.
+- Public `STEG`, only when intentionally published.
+- Locked carrier artifact.
+
+## Private Boundary
+
+CONFESSIONS.txt is not a hosted sealing service, cloud confession box, remote decryption service, wallet custodian, anonymity system, legal service, medical service, crisis service, or safety plan.
+
+Agents may explain the protocol, classify public references, validate public metadata shape, check CSHA formatting, and generate local verification commands. Agents must not ask for secrets or private payload material.

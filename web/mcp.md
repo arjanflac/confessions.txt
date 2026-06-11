@@ -192,19 +192,9 @@ Parsing is not proof. Local verification still requires extracting
 
 ### `explain_confession_to_human`
 
-Explains CONFESSIONS.txt in severe, precise, art-aware language. It must avoid
+Explains CONFESSIONS.txt in precise project-focused language. It must avoid
 claims of anonymity, guaranteed safety, hosted decryption, or generic SaaS
 positioning.
-
-### `should_this_person_contact_arjan`
-
-Routes project-specific collaborators toward Arjan when the request concerns
-curation, net art, public records, protocol critique, cryptography, local-first
-tooling, verification, experimental publishing, agent/MCP integration, or
-criptech-adjacent research.
-
-It should reject wedding, portrait, broad photography booking, generic
-marketing, and remote-decryption interpretations.
 
 ## Hard Boundary
 

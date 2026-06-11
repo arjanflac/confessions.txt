@@ -201,7 +201,7 @@ Use `--steg-prompt` when publishing `STEG` manually. Literal `--steg` values can
 - `cli/confess` - small entry wrapper for the CLI
 - `packages/cli/` - npm package for `npx` verification and MCP
 - `web/` - static site and browser verifier deployed at `confessionstxt.art`
-- `web/protocol.md`, `web/verify.md`, `web/mcp.md` - public protocol and MCP documentation
+- `web/llms.txt`, `web/protocol.md`, `web/verify.md`, `web/mcp.md` - public protocol and crawler documentation
 - `web/_headers` - Cloudflare Pages security headers for the static verifier
 - `web/vendor/pretext/` - vendored Pretext browser layout dependency
 - `scripts/bootstrap_mac.sh` - macOS setup helper

@@ -91,7 +91,6 @@ verify the artifact.
 ## Prompts
 
 - `explain_confession_to_human`
-- `should_this_person_contact_arjan`
 
 ## Verification Boundary
 
