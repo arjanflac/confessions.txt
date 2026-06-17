@@ -295,15 +295,18 @@
       }
 
       .marker-strip {
-        display: grid;
-        gap: 0.7rem;
-        width: max-content;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.58rem clamp(0.78rem, 1vw, 0.95rem);
+        width: min(100%, 39rem);
         max-width: 100%;
       }
 
       .package-tag {
         display: inline-flex;
         align-items: center;
+        flex: 0 0 auto;
         gap: 0.58rem;
         width: max-content;
         max-width: 100%;
@@ -343,6 +346,7 @@
 
       .trust-strip {
         display: flex;
+        flex: 1 1 18.5rem;
         flex-wrap: wrap;
         justify-content: flex-start;
         align-items: center;
