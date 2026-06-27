@@ -286,13 +286,6 @@
         line-height: 1.64;
       }
 
-      .agent-boundary {
-        max-width: 41rem;
-        color: var(--text-2);
-        font-size: 0.86rem;
-        line-height: 1.64;
-      }
-
       .input-panel {
         display: grid;
         gap: 0.9rem;
@@ -1049,8 +1042,7 @@
               <div class="title-group">
                 <h1 class="sr-only">Verify</h1>
                 <p class="lede" data-pretext="left">Resolve a Base transaction hash into public artifact provenance.</p>
-                <p class="lede-support">The verifier fetches public metadata, previews the locked carrier artifact, and prints local audit commands. It does not decrypt payloads in-browser.</p>
-                <p class="agent-boundary">Agents can explain public references, resolve metadata, and generate local verification steps, but CONFESSIONS.txt never needs your plaintext testimony or private keys to be sent to a remote model.</p>
+                <p class="lede-support">Fetch public metadata, preview the locked carrier artifact, and generate local audit commands without decrypting payloads or asking for plaintext, private keys, or secrets.</p>
               </div>
             </div>
           </header>
