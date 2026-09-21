@@ -1,0 +1,12 @@
+#!/bin/sh
+# One entry point; use the project's tested environment without activation.
+set -eu
+CONFESS_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -x "$CONFESS_ROOT/.venv/bin/python" ]; then
+  exec "$CONFESS_ROOT/.venv/bin/python" "$CONFESS_ROOT/cli/confess.py" "$@"
+fi
+if command -v python3 >/dev/null 2>&1; then
+  exec python3 "$CONFESS_ROOT/cli/confess.py" "$@"
+fi
+printf '%s\n' 'Python is missing. See README.md for setup instructions.' >&2
+exit 1

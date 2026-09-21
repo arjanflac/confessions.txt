@@ -44,18 +44,24 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--json") flags.json = true;
+    if (arg === "--") {
+      positional.push(...argv.slice(i + 1));
+      break;
+    } else if (arg === "--json") flags.json = true;
     else if (arg === "--commands") flags.commandsOnly = true;
     else if (arg === "--no-artifact-check") flags.checkArtifact = false;
     else if (arg === "--rpc-url") {
       i += 1;
-      flags.rpcUrl = argv[i] || null;
+      if (!argv[i] || argv[i].startsWith("--")) throw new Error("--rpc-url requires an HTTPS URL.");
+      flags.rpcUrl = argv[i];
     } else if (arg.startsWith("--rpc-url=")) {
       flags.rpcUrl = arg.slice("--rpc-url=".length);
     } else if (arg === "-h" || arg === "--help") {
       flags.help = true;
     } else if (arg === "-v" || arg === "--version") {
       flags.version = true;
+    } else if (arg.startsWith("-")) {
+      throw new Error(`Unknown option: ${arg.replace(/[^a-zA-Z0-9_-]/g, "?")}`);
     } else {
       positional.push(arg);
     }
@@ -112,6 +118,6 @@ main()
     process.exitCode = code;
   })
   .catch((error) => {
-    process.stderr.write(`${error.stack || error.message || String(error)}\n`);
+    process.stderr.write(`${error.message || "Command failed."}\n`);
     process.exitCode = 1;
   });

@@ -12,9 +12,9 @@ if [[ -z "${PY_VER}" ]]; then
   exit 1
 fi
 case "${PY_VER}" in
-  3.11|3.12) ;;
+  3.12) ;;
   *)
-    echo "Python ${PY_VER} detected. Use Python 3.11 or 3.12 to build HStego."
+    echo "Python ${PY_VER} detected. Use Python 3.12 with the pinned dependencies to build HStego."
     echo "Example: $(brew --prefix python@3.12 2>/dev/null)/bin/python3.12 -m venv .venv"
     exit 1
     ;;
@@ -88,7 +88,12 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
+HSTEGO_COMMIT="ca43b9f3ddd53757da0ae636331f12c3cbc64091"
 git clone --depth 1 --branch v0.5 https://github.com/daniellerch/hstego.git "${TMP_DIR}/hstego"
+if [[ "$(git -C "${TMP_DIR}/hstego" rev-parse HEAD)" != "${HSTEGO_COMMIT}" ]]; then
+  echo "HStego tag changed; refusing unreviewed source." >&2
+  exit 1
+fi
 
 # On Apple Silicon, HStego's STC code uses x86 SSE intrinsics.
 # Use sse2neon to translate SSE intrinsics to NEON for arm64 builds.

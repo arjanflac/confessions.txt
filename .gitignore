@@ -42,6 +42,8 @@ payload.age
 *.age
 locked_artifact.jpg
 locked_*.jpg
+locked_*.png
+stego*.png
 stego*.jpg
 extracted_payload*
 decrypted_payload*
@@ -66,3 +68,11 @@ Thumbs.db
 *.log
 *.swp
 *.swo
+
+# Private generated credentials and in-progress seal workspaces
+*.secrets.json
+.confess-*/
+.audit/
+output/playwright/
+
+.playwright-cli/

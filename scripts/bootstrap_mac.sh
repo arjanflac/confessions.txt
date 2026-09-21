@@ -45,7 +45,7 @@ ask_yes() {
 }
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  echo "This bootstrap script is macOS-only. Use the README Ubuntu steps on Linux." >&2
+  echo "This bootstrap script is macOS-only. See docs/cli.md for Linux prerequisites." >&2
   exit 1
 fi
 
@@ -76,10 +76,11 @@ fi
 
 # shellcheck source=/dev/null
 source .venv/bin/activate
+python -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 12) else "Existing .venv needs Python 3.12. Move it aside and run setup again.")'
 
 step "Installing Python dependencies"
 python -m pip install --upgrade pip
-python -m pip install imageio numpy scipy pycryptodome numba Pillow
+python -m pip install -r requirements.txt
 
 step "Installing HStego native extension"
 bash scripts/install_hstego_mac.sh
@@ -104,6 +105,7 @@ cat <<'EOF'
 Bootstrap complete.
 
 Next:
-  source .venv/bin/activate
-  python cli/confess.py doctor
+  ./confess
+
+Use a separate private workspace for each record. The launcher uses .venv automatically.
 EOF

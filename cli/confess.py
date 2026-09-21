@@ -10,11 +10,14 @@ import json
 import os
 import platform
 import re
+import select
 import secrets
 import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
+import warnings
 import time
 import threading
 import urllib.error
@@ -33,7 +36,7 @@ ARWEAVE_URL_PREFIX = "https://arweave.net/"
 WINSTON_PER_AR = 1_000_000_000_000
 ARWEAVE_TXID_RE = re.compile(r"^[a-zA-Z0-9_-]{43}$")
 CSHA_RE = re.compile(r"^[0-9a-fA-F]{128}$")
-CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
+CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]")
 
 
 def _err(msg: str) -> None:
@@ -55,24 +58,22 @@ def _which(name: str) -> Optional[str]:
 def _load_config() -> dict:
     if CONFIG_PATH.exists():
         try:
-            return json.loads(CONFIG_PATH.read_text())
+            data = json.loads(CONFIG_PATH.read_text())
+            if not isinstance(data, dict) or ("wallet_path" in data and not isinstance(data["wallet_path"], str)):
+                raise RuntimeError("Invalid config; run confess init.")
+            return data
         except json.JSONDecodeError:
-            return {}
+            raise RuntimeError("Invalid config JSON; run confess init.") from None
     return {}
 
 
 def _save_wallet_path(wallet_path: Path) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        os.chmod(CONFIG_DIR, 0o700)
-    except OSError:
-        pass
-    data = {"wallet_path": str(wallet_path)}
-    CONFIG_PATH.write_text(json.dumps(data, indent=2))
-    try:
-        os.chmod(CONFIG_PATH, 0o600)
-    except OSError:
-        pass
+    if CONFIG_DIR.is_symlink():
+        raise RuntimeError("Refusing a symlink configuration directory.")
+    CONFIG_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(CONFIG_DIR, 0o700)
+    with _staged_output(CONFIG_PATH, True) as staged:
+        staged.write_text(json.dumps({"wallet_path": str(wallet_path.resolve())}, indent=2))
 
 
 def _sha512_file(path: Path) -> str:
@@ -110,7 +111,7 @@ def _has_control_chars(value: str) -> bool:
 
 def _same_path(left: Path, right: Path) -> bool:
     try:
-        return left.resolve() == right.resolve()
+        return left.resolve() == right.resolve() or (left.exists() and right.exists() and left.samefile(right))
     except OSError:
         return left.absolute() == right.absolute()
 
@@ -120,24 +121,65 @@ def _warn_literal_secret_arg(flag: str, prompt_flag: str) -> None:
 
 
 def _prompt_secret(label: str, confirm: bool = False) -> str:
-    secret = getpass.getpass(f"{label}: ")
+    # getpass otherwise falls back to echoed stdin when no terminal exists.
+    def read(prompt):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", getpass.GetPassWarning)
+            try:
+                return getpass.getpass(prompt)
+            except getpass.GetPassWarning:
+                raise RuntimeError("A private terminal is required for hidden password entry.") from None
+    secret = read(f"{label}: ")
     if not secret:
         raise RuntimeError(f"{label} cannot be empty.")
+    _validate_secret(secret)
     if confirm:
-        repeated = getpass.getpass(f"Confirm {label}: ")
+        repeated = read(f"Confirm {label}: ")
         if repeated != secret:
             raise RuntimeError(f"{label} values did not match.")
     return secret
 
 
-def _remove_existing(path: Path, force: bool, label: str) -> None:
-    if not path.exists():
-        return
-    if not force:
-        raise RuntimeError(f"{label} already exists: {path}. Use --force to overwrite.")
-    if path.is_dir():
-        raise RuntimeError(f"{label} is a directory and cannot be overwritten: {path}")
-    path.unlink()
+def _validate_secret(secret: str, creating: bool = False) -> None:
+    if not secret or _has_control_chars(secret) or len(secret.encode("utf-8")) > 1024:
+        raise RuntimeError("Passphrases must be nonempty, at most 1024 UTF-8 bytes, and contain no control characters.")
+    if creating and len(secret) < 20:
+        raise RuntimeError("New AGE passphrases require at least 20 characters. Prefer --gen-split-pass; length alone does not ensure strength.")
+
+
+def _check_output(path: Path, force: bool, inputs=()) -> None:
+    if any(_same_path(path, source) for source in inputs):
+        raise RuntimeError(f"Output must differ from all inputs: {path}")
+    if path.is_symlink():
+        raise RuntimeError(f"Refusing symlink output: {path}")
+    if path.exists() and (not force or not path.is_file()):
+        raise RuntimeError(f"Output already exists: {path}. Use --force to replace a regular file after success.")
+    if not path.parent.is_dir():
+        raise RuntimeError(f"Output directory does not exist: {path.parent}")
+
+
+def _publish_output(staged: Path, target: Path, force: bool) -> None:
+    """Publish only complete files; never truncate the previous output on failure."""
+    _check_output(target, force)
+    os.chmod(staged, 0o600)
+    if force:
+        os.replace(staged, target)
+    else:
+        # Atomic no-clobber, including a file created after preflight.
+        os.link(staged, target)
+        staged.unlink()
+
+
+@contextmanager
+def _staged_output(target: Path, force: bool, inputs=()):
+    _check_output(target, force, inputs)
+    with tempfile.TemporaryDirectory(prefix=".confess-", dir=target.absolute().parent) as directory:
+        staged = Path(directory) / target.name
+        yield staged
+        if not staged.is_file():
+            raise RuntimeError("Operation produced no output.")
+        _publish_output(staged, target, force)
+
 
 
 def _write_payload_tar(text_path: Path, payload_tar: Path) -> None:
@@ -150,9 +192,11 @@ def _write_payload_tar(text_path: Path, payload_tar: Path) -> None:
     info.gid = 0
     info.uname = ""
     info.gname = ""
-    with tarfile.open(payload_tar, "w:gz") as tar:
-        with text_path.open("rb") as f:
-            tar.addfile(info, f)
+    fd = os.open(payload_tar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as archive:
+        with tarfile.open(fileobj=archive, mode="w:gz") as tar:
+            with text_path.open("rb") as f:
+                tar.addfile(info, f)
 
 
 def _base64url_decode(data: str) -> bytes:
@@ -197,14 +241,10 @@ def _print_install_hints() -> None:
     print("Quick setup:")
     print("  macOS:")
     print("    bash scripts/bootstrap_mac.sh")
-    print("    source .venv/bin/activate")
-    print("    python cli/confess.py doctor")
-    print("  Ubuntu:")
-    print("    sudo apt-get update && sudo apt-get install -y age python3-pip build-essential libjpeg-dev python3-tk")
-    print("    python3 -m pip install imageio numpy scipy pycryptodome numba Pillow")
-    print("    python3 -m pip install git+https://github.com/daniellerch/hstego.git@v0.5")
-    print("    npm install -g ardrive-cli")
-    print("  Optional Shamir: brew install ssss (or sudo apt-get install -y ssss)")
+    print("    ./confess")
+    print("  Linux: see docs/cli.md for Python 3.12 and native build prerequisites.")
+    print("  Public lookup: install Node.js 22 or newer.")
+    print("  Optional upload tool: npm install -g ardrive-cli")
 
 
 def _binary_version(cmd: list[str]) -> Optional[str]:
@@ -279,8 +319,8 @@ def _doctor() -> int:
     print(f"Python: {sys.version.split()[0]}")
     if sys.version_info < (3, 9):
         warnings.append("Python 3.9+ is required.")
-    elif sys.version_info >= (3, 13):
-        warnings.append("Python 3.11/3.12 is recommended; 3.13+ can break HStego dependencies.")
+    elif sys.version_info[:2] != (3, 12):
+        warnings.append("Python 3.12 is required for the pinned and tested HStego environment.")
 
     venv_ok = _in_venv()
     print(f"virtualenv: {'OK' if venv_ok else 'MISSING'}")
@@ -311,7 +351,7 @@ def _doctor() -> int:
         + (f" ({ardrive_version})" if ardrive_version else "")
     )
     if not ardrive_path:
-        warnings.append("ArDrive CLI missing.")
+        warnings.append("ArDrive CLI missing (needed only for uploading; local sealing and verification still work).")
 
     if platform.system() == "Darwin":
         clt_ok, clt_info = _xcode_clt_status()
@@ -352,7 +392,10 @@ def _doctor() -> int:
 def _validate_wallet_json(wallet_path: Path) -> bool:
     try:
         data = json.loads(wallet_path.read_text())
-        return isinstance(data, dict)
+        return isinstance(data, dict) and data.get("kty") == "RSA" and all(
+            isinstance(data.get(key), str) and re.fullmatch(r"[A-Za-z0-9_-]+", data[key])
+            for key in ("n", "e", "d", "p", "q", "dp", "dq", "qi")
+        )
     except Exception:
         return False
 
@@ -369,7 +412,7 @@ def _init() -> int:
         _err(f"Wallet file not found: {wallet_path}")
         return 1
     if not _validate_wallet_json(wallet_path):
-        _err("Wallet file is not valid JSON.")
+        _err("Wallet must be an Arweave RSA private JWK, not an arbitrary JSON file.")
         return 1
 
     _save_wallet_path(wallet_path)
@@ -502,7 +545,7 @@ def _quiet_juniward_cost_debug(stego_obj, hstegolib) -> None:
     stego_obj.cost_polarization = _quiet_cost_polarization
 
 
-def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
+def _resolve_seal_passwords_unchecked(args: argparse.Namespace) -> Tuple[str, str, str]:
     single_pass = args.single_pass
     single_prompt = args.single_pass_prompt
     generated_single = args.gen_single_pass
@@ -555,64 +598,107 @@ def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
     )
 
 
+def _resolve_seal_passwords(args: argparse.Namespace) -> Tuple[str, str, str]:
+    age_pass, stego_pass, mode = _resolve_seal_passwords_unchecked(args)
+    _validate_secret(age_pass, creating=True)
+    _validate_secret(stego_pass)
+    if mode.startswith("split") and age_pass == stego_pass:
+        raise RuntimeError("Split mode requires different AGE and STEGO passphrases.")
+    return age_pass, stego_pass, mode
+
+
 def _run_age_with_passphrase(cmd: list[str], passphrase: str, confirm: bool) -> None:
+    _validate_secret(passphrase)
     if _which("age") is None:
         raise RuntimeError("age CLI not found. Install age first.")
-
-    if pty is None:
-        raise RuntimeError("pty not available; cannot run age passphrase mode non-interactively.")
-
-    env = os.environ.copy()
+    # HStego starts native threads. Fork a PTY only in a fresh, single-threaded
+    # interpreter, to avoid fork-after-numpy deadlocks in repeated TUI use.
+    helper = Path(__file__).resolve().with_name("age_pty.py")
+    proc = subprocess.Popen([sys.executable, "-I", str(helper)], stdin=subprocess.PIPE,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True,
+                            start_new_session=True)
     try:
-        pid, fd = pty.fork()
-    except OSError as e:
-        raise RuntimeError(f"Failed to create PTY for age: {e}")
+        proc.communicate(json.dumps({"cmd": cmd, "passphrase": passphrase, "confirm": confirm}), timeout=125)
+        if proc.returncode != 0:
+            raise RuntimeError("age failed: incorrect passphrase, damaged payload, or unsupported age format.")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("age timed out; operation cancelled.") from None
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
 
+
+def _run_age_pty(cmd: list[str], passphrase: str, confirm: bool) -> None:
+    _validate_secret(passphrase)
+    if _which("age") is None:
+        raise RuntimeError("age CLI not found. Install age first.")
+    if pty is None:
+        raise RuntimeError("A POSIX terminal is required for age passphrase mode.")
+    import signal
+    import termios
+
+    pid, fd = pty.fork()
     if pid == 0:
         try:
-            os.execvpe(cmd[0], cmd, env)
-        except FileNotFoundError:
+            attrs = termios.tcgetattr(0)
+            attrs[3] &= ~(termios.ECHO | termios.ECHONL)
+            termios.tcsetattr(0, termios.TCSANOW, attrs)
+            os.execvp(cmd[0], cmd)
+        except Exception:
             os._exit(127)
-    else:
-        to_send = passphrase + "\n"
-        if confirm:
-            to_send += passphrase + "\n"
-        try:
-            os.write(fd, to_send.encode())
-        except OSError:
-            pass
-
-        output_chunks: list[bytes] = []
-        try:
-            while True:
-                try:
-                    chunk = os.read(fd, 1024)
-                    if not chunk:
-                        break
-                    output_chunks.append(chunk)
-                except OSError:
-                    break
-        finally:
+    transcript = b""
+    prompts_sent = 0
+    deadline = time.monotonic() + 120
+    reaped = False
+    try:
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError("age timed out; operation cancelled.")
+            ready, _, _ = select.select([fd], [], [], min(remaining, 0.2))
+            if not ready:
+                continue
             try:
-                os.close(fd)
+                chunk = os.read(fd, 4096)
             except OSError:
-                pass
-
+                break
+            if not chunk:
+                break
+            transcript = (transcript + chunk)[-16384:]
+            expected = b"Enter passphrase" if prompts_sent == 0 else b"Confirm passphrase"
+            if prompts_sent < (2 if confirm else 1) and expected in transcript:
+                # Wait until age has actually disabled echo before sending secrets.
+                if not termios.tcgetattr(fd)[3] & termios.ECHO:
+                    os.write(fd, (passphrase + "\n").encode("utf-8"))
+                    prompts_sent += 1
+                    transcript = b""
         _, status = os.waitpid(pid, 0)
-        exit_code = os.waitstatus_to_exitcode(status)
-        output = b"".join(output_chunks).decode("utf-8", errors="ignore").strip()
-        if exit_code != 0:
-            sanitized = _sanitize_age_output(output, passphrase)
-            raise RuntimeError("age failed." + (f" {sanitized}" if sanitized else ""))
+        reaped = True
+        if os.waitstatus_to_exitcode(status) != 0:
+            # Child diagnostics may contain secrets or terminal control sequences.
+            raise RuntimeError("age failed: incorrect passphrase, damaged payload, or unsupported age format.")
+    finally:
+        os.close(fd)
+        if not reaped:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            os.waitpid(pid, 0)
 
 
 def _age_encrypt(input_path: Path, output_path: Path, passphrase: str) -> None:
-    cmd = ["age", "-p", "-o", str(output_path), str(input_path)]
+    cmd = ["age", "-p", "-o", str(output_path.absolute()), str(input_path.absolute())]
     _run_age_with_passphrase(cmd, passphrase, confirm=True)
 
 
 def _age_decrypt(input_path: Path, output_path: Path, passphrase: str) -> None:
-    cmd = ["age", "-d", "-o", str(output_path), str(input_path)]
+    cmd = ["age", "-d", "-o", str(output_path.absolute()), str(input_path.absolute())]
     _run_age_with_passphrase(cmd, passphrase, confirm=False)
 
 
@@ -766,10 +852,12 @@ def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
         with _suppress_native_output():
             stego = None
             try:
-                if _is_spatial_image(stego_image, hstegolib):
+                with stego_image.open("rb") as source:
+                    signature = source.read(8)
+                if signature == b"\x89PNG\r\n\x1a\n":
                     stego = hstegolib.S_UNIWARD()
                     _with_heartbeat("HStego extract", lambda: _extract(stego))
-                elif _is_jpeg_image(stego_image):
+                elif signature.startswith(b"\xff\xd8\xff"):
                     stego = hstegolib.J_UNIWARD()
                     _with_heartbeat("HStego extract", lambda: _extract(stego))
                 else:
@@ -785,142 +873,99 @@ def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
         raise RuntimeError(invalid_secret_msg)
 
 
-def _seal(args: argparse.Namespace) -> int:
-    try:
-        age_pass, stego_pass, pass_mode = _resolve_seal_passwords(args)
-    except RuntimeError as e:
-        _err(str(e))
-        return 1
+def _store_generated_secrets(args, age_pass: str, stego_pass: str, mode: str) -> None:
+    if "generated" not in mode:
+        if args.secrets_file:
+            raise RuntimeError("--secrets-file is only for generated passphrases.")
+        return
+    secret_text = json.dumps({"age_passphrase": age_pass, "stego_passphrase": stego_pass}, indent=2) + "\n"
+    if args.secrets_file:
+        path = Path(args.secrets_file).expanduser()
+        with _staged_output(path, False) as staged:
+            fd = os.open(staged, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w") as f:
+                f.write(secret_text)
+        print(f"Generated secrets saved privately to: {path}")
+    else:
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            raise RuntimeError("Generated secrets require an interactive terminal or --secrets-file PATH. They are never printed to redirected output.")
+        with open("/dev/tty", "w") as terminal:
+            terminal.write("Store these secrets in your password manager:\n" + secret_text)
+            terminal.flush()
 
+
+def _seal(args: argparse.Namespace) -> int:
     cover = Path(args.image).expanduser()
     text_path = Path(args.text).expanduser()
-    if not cover.exists():
-        _err(f"Cover image not found: {cover}")
-        return 1
-    if not text_path.exists():
-        _err(f"Testimony file not found: {text_path}")
-        return 1
-    if not text_path.is_file():
-        _err(f"Testimony path is not a regular file: {text_path}")
-        return 1
-    output_image = Path(args.out or "locked_artifact.jpg").expanduser()
-    if _same_path(output_image, cover):
-        _err("Output artifact path must differ from the cover image. Refusing to overwrite the cover.")
-        return 1
-
-    # Fail fast before encryption so we do not leave a fresh payload.age
-    # when HStego is unavailable (e.g., outside the project virtualenv).
+    extension = ".jpg" if _is_jpeg_image(cover) and args.algo != "s-uniward" else ".png"
+    output_image = Path(args.out or ("locked_artifact" + extension)).expanduser()
+    payload_age = output_image.parent / "payload.age"
     try:
+        if not cover.is_file() or not text_path.is_file():
+            raise RuntimeError("Cover image and testimony must both be regular files.")
+        if extension == ".jpg" and not _is_jpeg_image(output_image):
+            raise RuntimeError("JPEG embedding requires a .jpg or .jpeg output.")
+        if extension == ".png" and output_image.suffix.lower() != ".png":
+            raise RuntimeError("Spatial embedding requires a lossless .png output.")
+        for target in (payload_age, output_image):
+            _check_output(target, args.force, (cover, text_path))
+        if _same_path(payload_age, output_image):
+            raise RuntimeError("Artifact and encrypted payload paths must differ.")
+        if args.secrets_file:
+            _check_output(Path(args.secrets_file).expanduser(), False, (cover, text_path, payload_age, output_image))
         _load_hstegolib()
-    except RuntimeError as e:
+        age_pass, stego_pass, pass_mode = _resolve_seal_passwords(args)
+        _store_generated_secrets(args, age_pass, stego_pass, pass_mode)
+        print(f"Password mode: {pass_mode}.")
+        if pass_mode.startswith("single"):
+            print("WARNING: publishing this STEG password would also disclose the AGE decryption password.")
+        with _staged_output(output_image, args.force, (cover, text_path)) as staged_image:
+            # The private directory contains every intermediate, including plaintext.
+            payload_tar = staged_image.parent / "payload.tar.gz"
+            staged_age = staged_image.parent / "payload.age"
+            print("Packing testimony in a private temporary directory...")
+            _write_payload_tar(text_path, payload_tar)
+            try:
+                print("Encrypting with age...")
+                _age_encrypt(payload_tar, staged_age, age_pass)
+            finally:
+                payload_tar.unlink(missing_ok=True)
+            csha = _sha512_file(staged_age)
+            _hstego_embed(cover, staged_age, staged_image, stego_pass, args.algo)
+            print("Checking artifact extraction before publishing local outputs...")
+            checked = staged_image.parent / "roundtrip.age"
+            _hstego_extract(staged_image, checked, stego_pass)
+            if _sha512_file(checked) != csha:
+                raise RuntimeError("Artifact round-trip checksum failed. Outputs were not published.")
+            _publish_output(staged_age, payload_age, args.force)
+        print(f"Locked artifact: {output_image}")
+        print(f"CSHA (sha512 of payload.age): {csha}")
+        print(f"Payload file: {payload_age}")
+        return 0
+    except (RuntimeError, OSError, tarfile.TarError) as e:
         _err(str(e))
         return 1
-
-    payload_tar = Path("payload.tar.gz")
-    payload_age = Path("payload.age")
-
-    try:
-        print("Preparing seal workspace...")
-        _remove_existing(payload_tar, args.force, "Temporary archive")
-        _remove_existing(payload_age, args.force, "Payload file")
-        _remove_existing(output_image, args.force, "Locked artifact")
-    except RuntimeError as e:
-        _err(str(e))
-        return 1
-
-    print(f"Packing testimony into {payload_tar}...")
-    try:
-        _write_payload_tar(text_path, payload_tar)
-    except (OSError, tarfile.TarError) as e:
-        if payload_tar.exists():
-            try:
-                payload_tar.unlink()
-            except OSError:
-                pass
-        _err(f"Failed to pack testimony: {e}")
-        return 1
-
-    if pass_mode == "single-generated":
-        print("Password mode: single (--gen-single-pass).")
-        print("Generated passphrase:")
-        print(age_pass)
-        print("Store this securely. Optional Shamir splitting: ssss-split -t 2 -n 3")
-    elif pass_mode == "split-generated":
-        print("Password mode: split (--gen-split-pass).")
-        print("Generated AGE passphrase:")
-        print(age_pass)
-        print("Generated STEGO passphrase:")
-        print(stego_pass)
-        print("Store both securely. Share only stego-pass if delegating extraction-only verification.")
-    elif pass_mode == "single":
-        print("Password mode: single (--single-pass).")
-        print("Warning: passphrase flags can be visible in shell history and process lists. Prefer --single-pass-prompt for manual use.")
-    elif pass_mode == "single-prompt":
-        print("Password mode: single (--single-pass-prompt).")
-    elif pass_mode == "split-prompt":
-        print("Password mode: split (--split-pass-prompt).")
-        print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
-    else:
-        print("Password mode: split (--age-pass + --stego-pass).")
-        print("Warning: passphrase flags can be visible in shell history and process lists. Prefer --split-pass-prompt for manual use.")
-        print("Feature: stego-pass can be shared for extraction + CSHA verification without age decryption.")
-
-    try:
-        print(f"Encrypting packed testimony into {payload_age} with age...")
-        _age_encrypt(payload_tar, payload_age, age_pass)
-    except RuntimeError as e:
-        if payload_age.exists():
-            try:
-                payload_age.unlink()
-            except OSError:
-                pass
-        _err(str(e))
-        return 1
-    finally:
-        if payload_tar.exists():
-            try:
-                payload_tar.unlink()
-            except OSError:
-                pass
-
-    print("Computing canonical CSHA over payload.age...")
-    csha = _sha512_file(payload_age)
-
-    try:
-        _hstego_embed(cover, payload_age, output_image, stego_pass, args.algo)
-    except RuntimeError as e:
-        if output_image.exists():
-            try:
-                output_image.unlink()
-            except OSError:
-                pass
-        _err(str(e))
-        return 1
-
-    print(f"Locked artifact: {output_image}")
-    print(f"CSHA (sha512 of payload.age): {csha}")
-    print(f"Payload file: {payload_age}")
-    return 0
 
 
 def _extract_ardrive_data_tx(output: str) -> Optional[str]:
-    match = re.search(r'"dataTxId"\s*:\s*"([^"]+)"', output)
-    if match:
-        return match.group(1)
-
-    start = output.find("{")
-    end = output.rfind("}")
-    if start != -1 and end != -1 and end > start:
+    # Only a typed file receipt may supply the data transaction. Never guess a
+    # 43-character ID (it could be the wallet, bundle, drive, or metadata ID).
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(output):
+        if char != "{":
+            continue
         try:
-            data = json.loads(output[start : end + 1])
-            for item in data.get("created", []):
-                if item.get("type") == "file" and item.get("dataTxId"):
-                    return item.get("dataTxId")
-        except Exception:
-            pass
-
-    match = re.search(r"[a-zA-Z0-9_-]{43}", output)
-    return match.group(0) if match else None
+            data, _ = decoder.raw_decode(output[index:])
+        except ValueError:
+            continue
+        if not isinstance(data, dict) or not isinstance(data.get("created"), list):
+            continue
+        ids = [item.get("dataTxId") for item in data["created"]
+               if isinstance(item, dict) and item.get("type") == "file"]
+        ids = [value for value in ids if isinstance(value, str) and _validate_arweave_txid(value)]
+        if len(ids) == 1:
+            return ids[0]
+    return None
 
 
 def _ardrive_upload(file_path: Path, wallet_path: Path, folder_id: str, dest_name: Optional[str]) -> str:
@@ -939,9 +984,7 @@ def _ardrive_upload(file_path: Path, wallet_path: Path, folder_id: str, dest_nam
 
     res = _run(cmd)
     if res.returncode != 0:
-        detail = res.stderr.strip() or res.stdout.strip()
-        detail = detail.replace(str(wallet_path), "[WALLET_PATH]")
-        raise RuntimeError("ArDrive upload failed." + (f" Details: {detail}" if detail else ""))
+        raise RuntimeError("ArDrive upload failed. Check wallet balance, destination folder, and network. Raw wallet-tool output was withheld.")
 
     txid = _extract_ardrive_data_tx(res.stdout + "\n" + res.stderr)
     if not txid:
@@ -950,17 +993,31 @@ def _ardrive_upload(file_path: Path, wallet_path: Path, folder_id: str, dest_nam
 
 
 def _push(args: argparse.Namespace) -> int:
+    if not args.ack_permanent_upload:
+        _err("Arweave uploads spend wallet funds and are permanent. Review the file and use --ack-permanent-upload.")
+        return 1
     file_path = Path(args.file).expanduser()
     if not file_path.exists():
         _err(f"File not found: {file_path}")
         return 1
 
+    if file_path.suffix.lower() not in {".jpg", ".jpeg", ".png"} or not file_path.is_file():
+        _err("Upload requires a sealed JPEG or PNG artifact. Plaintext, archives, and wallet files must stay local.")
+        return 1
+    with file_path.open("rb") as image:
+        header = image.read(8)
+    if not (header.startswith(b"\xff\xd8\xff") or header == b"\x89PNG\r\n\x1a\n"):
+        _err("Artifact does not have a JPEG or PNG signature.")
+        return 1
     cfg = _load_config()
     wallet_path_str = cfg.get("wallet_path")
     if not wallet_path_str:
         _err("Wallet path not configured. Run `confess init`.")
         return 1
     wallet_path = Path(wallet_path_str).expanduser()
+    if _same_path(file_path, wallet_path):
+        _err("Refusing to upload a wallet file.")
+        return 1
     if not wallet_path.exists():
         _err(f"Wallet file not found: {wallet_path}")
         return 1
@@ -992,7 +1049,7 @@ def _push(args: argparse.Namespace) -> int:
 
 
 def _mint(args: argparse.Namespace) -> int:
-    title = args.title
+    title = args.title.strip()
     if not title:
         _err("Title is required.")
         return 1
@@ -1016,6 +1073,9 @@ def _mint(args: argparse.Namespace) -> int:
         _err("--csha must be a 128-character hex sha512 value.")
         return 1
 
+    if (args.steg is not None or args.steg_prompt) and not args.ack_public_steg:
+        _err("Publishing STEG is permanent. If it is also the AGE password, the testimony becomes public. Use --ack-public-steg only after checking they are different.")
+        return 1
     if args.steg is not None and args.steg_prompt:
         _err("Choose either --steg or --steg-prompt, not both.")
         return 1
@@ -1036,10 +1096,18 @@ def _mint(args: argparse.Namespace) -> int:
         _err("STEG cannot include control characters.")
         return 1
 
-    metadata_parts = [title, f"ARTXID:{txid}", f"CSHA:{csha}"]
+    if steg and steg != steg.strip():
+        _err("STEG cannot start or end with whitespace; verifiers trim field separators.")
+        return 1
+    reserved = {"TITLE", "ARTXID", "AR", "CSHA", "STEG", "CID", "IPFS", "PROOF", "SHA", "HASH"}
+    encoded_title = f"TITLE:{title}" if title.split(":", 1)[0].strip().upper() in reserved and ":" in title else title
+    metadata_parts = [encoded_title, f"ARTXID:{txid}", f"CSHA:{csha}"]
     if steg:
         metadata_parts.append(f"STEG:{steg}")
     metadata = " | ".join(metadata_parts)
+    if len(metadata.encode("utf-8")) > 16384:
+        _err("Metadata exceeds the 16 KiB protocol limit.")
+        return 1
     data_hex = "0x" + metadata.encode("utf-8").hex()
 
     print("Metadata string:")
@@ -1062,40 +1130,26 @@ def _mint(args: argparse.Namespace) -> int:
 
 def _extract(args: argparse.Namespace) -> int:
     stego_image = Path(args.image).expanduser()
-    if not stego_image.exists():
-        _err(f"Locked artifact not found: {stego_image}")
-        return 1
-
     output_path = Path(args.out or "payload.age").expanduser()
     try:
+        if not stego_image.is_file():
+            raise RuntimeError(f"Locked artifact not found: {stego_image}")
+        _check_output(output_path, args.force, (stego_image,))
         if args.single_pass_prompt:
             password = _prompt_secret("Single passphrase")
         elif args.stego_pass_prompt:
             password = _prompt_secret("STEGO passphrase")
         else:
             password = args.single_pass or args.stego_pass
-            if args.single_pass:
-                _warn_literal_secret_arg("--single-pass", "--single-pass-prompt")
-            elif args.stego_pass:
-                _warn_literal_secret_arg("--stego-pass", "--stego-pass-prompt")
-        _remove_existing(output_path, args.force, "Output payload")
-    except RuntimeError as e:
+            _warn_literal_secret_arg("passphrase arguments", "--stego-pass-prompt")
+        _validate_secret(password)
+        with _staged_output(output_path, args.force, (stego_image,)) as staged:
+            _hstego_extract(stego_image, staged, password)
+        print(f"Extracted payload: {output_path}")
+        return 0
+    except (RuntimeError, OSError) as e:
         _err(str(e))
         return 1
-
-    try:
-        _hstego_extract(stego_image, output_path, password)
-    except RuntimeError as e:
-        if output_path.exists():
-            try:
-                output_path.unlink()
-            except OSError:
-                pass
-        _err(str(e))
-        return 1
-
-    print(f"Extracted payload: {output_path}")
-    return 0
 
 
 def _verify(args: argparse.Namespace) -> int:
@@ -1143,14 +1197,14 @@ def _verify(args: argparse.Namespace) -> int:
             if not decrypt_pass:
                 _err("--decrypt requires --single-pass-prompt, --age-pass-prompt, --single-pass, or --age-pass.")
                 return 1
-            _remove_existing(output_path, args.force, "Decrypted output")
-            _age_decrypt(payload_path, output_path, decrypt_pass)
-        except RuntimeError as e:
-            if output_path.exists():
-                try:
-                    output_path.unlink()
-                except OSError:
-                    pass
+            _validate_secret(decrypt_pass)
+            with _staged_output(output_path, args.force, (payload_path,)) as staged:
+                checked_payload = Path(tempfile.mkdtemp(prefix="input-", dir=staged.parent)) / "payload.age"
+                shutil.copyfile(payload_path, checked_payload)
+                if _sha512_file(checked_payload) != expected:
+                    raise RuntimeError("Payload changed after checksum verification. Refusing decryption.")
+                _age_decrypt(checked_payload, staged, decrypt_pass)
+        except (RuntimeError, OSError) as e:
             _err(str(e))
             return 1
         print(f"Decrypted to: {output_path}")
@@ -1166,14 +1220,16 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("doctor", help="Check dependencies")
+    sub.add_parser("tui", help="Open the guided terminal menu")
 
     sub.add_parser("init", help="Initialize local config")
 
     seal = sub.add_parser("seal", help="Seal a testimony into a locked artifact")
     seal.add_argument("--image", required=True, help="Cover image (jpg/png)")
     seal.add_argument("--text", required=True, help="Testimony file (.md/.txt/etc)")
-    seal.add_argument("--out", help="Output locked artifact jpg")
-    seal.add_argument("--force", action="store_true", help="Overwrite payload.age, payload.tar.gz, or output artifact if present")
+    seal.add_argument("--out", help="Output artifact (.jpg for JPEG, .png for spatial); payload.age is saved alongside it")
+    seal.add_argument("--secrets-file", help="Save generated passphrases to a new private file (never overwritten)")
+    seal.add_argument("--force", action="store_true", help="Replace completed outputs only after successful sealing")
     seal.add_argument(
         "--algo",
         default="auto",
@@ -1214,6 +1270,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--folder-id",
         help="ArDrive parent folder id (the folder `entityId` from `ardrive create-drive` output)",
     )
+    push.add_argument("--ack-permanent-upload", action="store_true", help="Acknowledge permanent upload and wallet spending")
     push.add_argument("--dest-name", help="Optional destination filename on ArDrive")
 
     mint = sub.add_parser("mint", help="Generate Base tx input metadata")
@@ -1222,6 +1279,8 @@ def _build_parser() -> argparse.ArgumentParser:
     mint.add_argument("--title", required=True, help="Title")
     mint.add_argument("--steg", help="Optional: publish stego pass as STEG:<value> in metadata")
     mint.add_argument("--steg-prompt", action="store_true", help="Prompt securely for a STEG value to publish")
+
+    mint.add_argument("--ack-public-steg", action="store_true", help="Acknowledge permanent disclosure; STEG must differ from the AGE password")
 
     extract = sub.add_parser("extract", help="Extract payload.age from a locked artifact")
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
@@ -1269,6 +1328,17 @@ def _print_help_all(parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> int:
+    try:
+        return _main()
+    except (KeyboardInterrupt, EOFError):
+        _err("Cancelled.")
+        return 130
+    except (RuntimeError, OSError) as error:
+        _err(str(error))
+        return 1
+
+
+def _main() -> int:
     parser = _build_parser()
     argv = sys.argv[1:]
 
@@ -1276,8 +1346,17 @@ def main() -> int:
         _print_help_all(parser)
         return 0
 
-    args = parser.parse_args()
+    if not argv and sys.stdin.isatty() and sys.stdout.isatty():
+        args = parser.parse_args(["tui"])
+    else:
+        args = parser.parse_args()
+    return _dispatch(args)
 
+
+def _dispatch(args: argparse.Namespace) -> int:
+    if args.cmd == "tui":
+        import tui
+        return tui.run(sys.modules[__name__])
     if args.cmd == "doctor":
         return _doctor()
     if args.cmd == "init":
