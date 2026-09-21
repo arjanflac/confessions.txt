@@ -1,6 +1,6 @@
-# Release readiness — 0.2.0 candidate
+# Release readiness — 0.2.0
 
-**Verdict: ready with caveats for a deliberately scoped release.** The candidate is prepared locally. It is not a certification that all vulnerabilities have been found. No push, npm publication, wallet upload, or deployment was part of this review.
+**Verdict: ready with caveats for a deliberately scoped release.** This records the pre-release review; it is not a certification that all vulnerabilities have been found. Publication and deployment are separate steps, verified in GitHub Actions, the npm registry, and Cloudflare Pages. No wallet upload was part of the review.
 
 ## Evidence from the local review
 
