@@ -67,7 +67,7 @@ class TerminalMenuTests(WorkspaceTestCase):
 
     def test_path_starting_with_dash_is_data(self):
         Path('--force').touch()
-        code, handler = self.run_menu(['2', '--force', 'out.age', '0'])
+        code, handler = self.run_menu(['2', '--force', 'out.age', '', '0'])
         self.assertEqual(code, 0)
         args = handler.call_args.args[0]
         self.assertEqual(args.image, '--force')
@@ -76,8 +76,9 @@ class TerminalMenuTests(WorkspaceTestCase):
     def test_extract_clears_previous_records_checksum(self):
         Path('other.png').touch()
         state = tui.Session(csha='a' * 128)
-        with patch('builtins.input', side_effect=['other.png', 'other.age']), patch.object(c, '_dispatch', return_value=0):
+        with patch('builtins.input', side_effect=['other.png', 'other.age', 'yes']), patch.object(c, '_dispatch', return_value=0) as dispatch:
             tui._operation(c, state, '2')
+        self.assertTrue(dispatch.call_args.args[0].legacy_hstego)
         self.assertEqual(state.payload, 'other.age')
         self.assertEqual(state.csha, '')
 

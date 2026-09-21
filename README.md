@@ -47,6 +47,8 @@ It remembers the current artifact and checksum while it is open. Ctrl-C cancels 
 | `payload.age` | The encrypted file hidden in the image | Can be public with a strong independent AGE password |
 | `locked_artifact.secrets.json` | The two generated passwords | **Yes — this file is plaintext** |
 
+Old records remain readable: choose legacy extraction in the menu for images created with HStego v0.5. New seals use the updated authenticated HStego format.
+
 The terminal also prints **CSHA**, the SHA-512 checksum of `payload.age`. Keep it with the record. Sealing extracts the finished image and checks this checksum before saving the outputs.
 
 Save both passwords in a password manager. The **STEG password** opens the hiding place in the image. The **AGE password** unlocks the text. If you intentionally publish STEG, other people can extract the encrypted file and check it while the confession stays encrypted.

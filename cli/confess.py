@@ -260,13 +260,12 @@ def _binary_version(cmd: list[str]) -> Optional[str]:
 
 def _check_hstego() -> Tuple[bool, str]:
     try:
-        import hstegolib  # type: ignore
+        hstegolib = _load_hstegolib()
     except SystemExit:
         return False, "native extensions missing"
     except Exception as e:
         return False, str(e)
-    version = getattr(hstegolib, "__version__", None)
-    return True, version or "import ok"
+    return True, "authenticated v2 format; scrypt N=2^18"
 
 def _in_venv() -> bool:
     return getattr(sys, "base_prefix", sys.prefix) != sys.prefix or hasattr(sys, "real_prefix")
@@ -463,28 +462,32 @@ def _looks_like_age_ciphertext(path: Path) -> bool:
 
 
 def _hstego_wrapped_payload_size(payload: Path) -> int:
-    # HStego encrypts the already-age-encrypted payload again before embedding:
-    # 16-byte salt + 16-byte IV + AES-CBC padded payload.
-    size = payload.stat().st_size
-    return 32 + ((size // 16) + 1) * 16
+    # v0.6.1: salt + nonce + authentication tag, then the compressed envelope.
+    import zlib
+    with payload.open("rb") as source:
+        data = source.read(64 * 1024 * 1024 + 1)
+    if len(data) > 64 * 1024 * 1024:
+        raise RuntimeError("Encrypted payload exceeds HStego's 64 MiB limit.")
+    return 48 + 12 + len(zlib.compress(data, level=9))
 
 
 def _hstego_capacity(cover: Path, hstegolib, algo: str) -> int:
-    max_payload = getattr(hstegolib, "MAX_PAYLOAD", 0.05)
     if algo == "j-uniward":
         jpg = hstegolib.jpeg_load(str(cover))
-        return sum(int((hstegolib.np.count_nonzero(channel) * max_payload) / 8) for channel in jpg["coef_arrays"])
+        return hstegolib.jpg_capacity(jpg)
 
     try:
         import imageio.v2 as imageio  # type: ignore
     except Exception:
         import imageio  # type: ignore
 
+    hstegolib.validate_image_resource(str(cover))
     image = imageio.imread(str(cover))
-    pixels = 1
-    for dimension in image.shape:
-        pixels *= int(dimension)
-    return int((pixels * max_payload) / 8)
+    if image.ndim == 3 and image.shape[2] in (3, 4):
+        image = image[:, :, :3]  # HStego preserves alpha but embeds only in RGB.
+    elif image.ndim != 2:
+        raise RuntimeError("Spatial covers must be grayscale, RGB, or RGBA images.")
+    return hstegolib.spatial_capacity(image)
 
 
 def _print_embed_preflight(cover: Path, payload: Path, hstegolib, algo: str) -> None:
@@ -709,6 +712,16 @@ def _load_hstegolib():
         raise RuntimeError("HStego native extensions missing. Reinstall hstego with compiled extensions.")
     except Exception as e:
         raise RuntimeError(f"HStego not available: {e}")
+    if (getattr(hstegolib, "HEADER_MAGIC", None) != b"HS2\x00"
+            or getattr(hstegolib, "SCRYPT_N", 0) < 2**18):
+        raise RuntimeError("HStego 0.6.1 or newer is required. Run bash scripts/bootstrap_mac.sh to upgrade. Older records use extract --legacy-hstego.")
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        installed = tuple(int(part) for part in version("hstego").split("."))
+    except (PackageNotFoundError, ValueError):
+        raise RuntimeError("Cannot verify the HStego version. Reinstall the pinned environment.") from None
+    if installed < (0, 6, 1):
+        raise RuntimeError("HStego 0.6.1 or newer is required. Run bash scripts/bootstrap_mac.sh to upgrade.")
     return hstegolib
 
 
@@ -841,14 +854,21 @@ def _hstego_embed(cover: Path, payload: Path, output: Path, password: str, algo:
         raise RuntimeError("payload too large for cover; use larger image or smaller payload.")
 
 
-def _hstego_extract(stego_image: Path, output: Path, password: str) -> None:
-    hstegolib = _load_hstegolib()
-    invalid_secret_msg = "HStego extract failed: wrong stego password (or no embedded payload)."
+def _hstego_extract(stego_image: Path, output: Path, password: str, legacy: bool = False) -> None:
+    invalid_secret_msg = "HStego extract failed: wrong stego password, damaged image, or different format. For an old record, explicitly choose --legacy-hstego."
 
     def _extract(stego_obj) -> None:
         stego_obj.extract(str(stego_image), password, str(output))
 
     try:
+        hstegolib = _load_hstegolib()
+        hstegolib.validate_image_resource(str(stego_image))
+        if legacy:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("confess_legacy_loader", Path(__file__).with_name("hstego_legacy.py"))
+            loader = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(loader)
+            hstegolib = loader.load_legacy(hstegolib)
         with _suppress_native_output():
             stego = None
             try:
@@ -1144,7 +1164,7 @@ def _extract(args: argparse.Namespace) -> int:
             _warn_literal_secret_arg("passphrase arguments", "--stego-pass-prompt")
         _validate_secret(password)
         with _staged_output(output_path, args.force, (stego_image,)) as staged:
-            _hstego_extract(stego_image, staged, password)
+            _hstego_extract(stego_image, staged, password, legacy=args.legacy_hstego)
         print(f"Extracted payload: {output_path}")
         return 0
     except (RuntimeError, OSError) as e:
@@ -1286,6 +1306,7 @@ def _build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--image", required=True, help="Locked artifact jpg")
     extract.add_argument("--out", help="Output payload path (default payload.age)")
     extract.add_argument("--force", action="store_true", help="Overwrite output payload if present")
+    extract.add_argument("--legacy-hstego", action="store_true", help="Explicitly read an older HStego v0.5-format record; new seals always use authenticated v2 format")
     extract_group = extract.add_mutually_exclusive_group(required=True)
     extract_group.add_argument("--single-pass", dest="single_pass", help="Single-mode passphrase (same secret used for age + stego)")
     extract_group.add_argument("--stego-pass", help="Split-mode stego password")

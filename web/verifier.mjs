@@ -252,6 +252,7 @@ function renderResolvedRecord(options) {
     html += '<div class="notes"><p class="notes-text">' + escapeHtml(previewError) + "</p></div>";
   }
   html += '<div class="notes"><p class="notes-text">Payload checksum not checked. Download the original archive file and run the local verification commands. Metadata is untrusted public content.</p></div>';
+  html += '<div class="notes"><p class="notes-text">For an older image, choose legacy extraction in the terminal menu or add <code>--legacy-hstego</code> to the extraction command.</p></div>';
   if (stegValue) {
     html += '<div class="notes"><p class="notes-text" data-pretext="left">Public STEG makes extraction public. Plaintext stays private only if the age password is strong and different from STEG.</p></div>';
   }

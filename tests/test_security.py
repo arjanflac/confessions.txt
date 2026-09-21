@@ -76,6 +76,30 @@ class FileSafetyTests(WorkspaceTestCase):
 
 
 class AdditionalSafetyTests(WorkspaceTestCase):
+    def test_old_hstego_cannot_be_used_for_new_seals(self):
+        from types import SimpleNamespace
+        with patch.dict(sys.modules, {'hstegolib': SimpleNamespace()}):
+            with self.assertRaisesRegex(RuntimeError, '0.6.1'):
+                c._load_hstegolib()
+        supported_format = SimpleNamespace(HEADER_MAGIC=b'HS2\x00', SCRYPT_N=2**18)
+        with patch.dict(sys.modules, {'hstegolib': supported_format}), patch('importlib.metadata.version', return_value='0.6'):
+            with self.assertRaisesRegex(RuntimeError, '0.6.1'):
+                c._load_hstegolib()
+
+    def test_extraction_resource_error_is_a_clean_failure(self):
+        from types import SimpleNamespace
+        def reject(_):
+            raise ValueError('Image exceeds resource limits')
+        with patch.object(c, '_load_hstegolib', return_value=SimpleNamespace(validate_image_resource=reject)):
+            with self.assertRaisesRegex(RuntimeError, 'resource limits'):
+                c._hstego_extract(Path('cover.png'), Path('out.age'), 'synthetic')
+
+    def test_hstego_payload_estimate_matches_compressed_envelope(self):
+        import zlib
+        data = b'synthetic encrypted data' * 20
+        Path('payload.age').write_bytes(data)
+        self.assertEqual(c._hstego_wrapped_payload_size(Path('payload.age')), 60 + len(zlib.compress(data, 9)))
+
     def test_mint_preserves_titles_that_resemble_metadata_fields(self):
         for title in ['AR : autobiography', 'TITLE: a title', 'HASH : notes']:
             with self.subTest(title=title), contextlib.redirect_stdout(io.StringIO()) as output:

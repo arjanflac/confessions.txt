@@ -225,3 +225,5 @@ Forbidden:
 `CSHA` is `sha512(payload.age)`, not a hash of the plaintext. A checksum match
 proves continuity between the encrypted payload and the public reference. It
 does not prove that the testimony is true.
+
+Older images created with HStego v0.5 require `--legacy-hstego` on the local extraction command. Choose legacy extraction explicitly in the menu, then compare the recovered payload against the original CSHA. New seals use HStego 0.6.1.

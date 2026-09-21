@@ -12,6 +12,12 @@ A public ciphertext allows unlimited offline password guesses. Short or reused h
 
 There is no recovery key or reset service. Generated password files are plaintext, written with mode 0600. Copy the passwords into a password manager and keep backups deliberately. Losing a password can make the record unreadable.
 
+## HStego format versions
+
+New seals require HStego 0.6.1’s authenticated headers and AES-EAX envelope, with scrypt applied to password-derived placement as well as encryption. The installer pins the reviewed upstream commit. Older versions exposed a [fast password-guess validation path](https://github.com/daniellerch/hstego/pull/9) through unauthenticated channel lengths. This does not bypass an independent AGE password, but a weak password reused for both layers is especially unsafe.
+
+Older records require explicit `--legacy-hstego` extraction. The compatibility reader is downloaded at a pinned revision with a pinned source checksum and MIT notice; its old native decoding entry point is replaced with the current implementation that validates lengths first. Both paths apply image size limits before decoding. This preserves old records without recreating their format for new seals. Legacy extraction alone is unauthenticated: compare the recovered payload’s CSHA before decryption.
+
 ## Local handling
 
 - Plaintext intermediate archives are created in private temporary directories and removed after encryption, including normal error and cancellation paths.

@@ -88,8 +88,8 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
-HSTEGO_COMMIT="ca43b9f3ddd53757da0ae636331f12c3cbc64091"
-git clone --depth 1 --branch v0.5 https://github.com/daniellerch/hstego.git "${TMP_DIR}/hstego"
+HSTEGO_COMMIT="bf71f6e0d7faaa632ad8a988c0393e94bfd13b2a"
+git clone --depth 1 --branch v0.6.1 https://github.com/daniellerch/hstego.git "${TMP_DIR}/hstego"
 if [[ "$(git -C "${TMP_DIR}/hstego" rev-parse HEAD)" != "${HSTEGO_COMMIT}" ]]; then
   echo "HStego tag changed; refusing unreviewed source." >&2
   exit 1
@@ -152,5 +152,7 @@ CPPFLAGS="-I${BREW_JPEG_PREFIX}/include -isysroot ${SDKROOT}" \
 CXXFLAGS="-isysroot ${SDKROOT} -I${CXX_INCLUDE_DIR}" \
 LDFLAGS="-L${BREW_JPEG_PREFIX}/lib" \
 python -m pip install "${TMP_DIR}/hstego"
+
+python "$(dirname "${BASH_SOURCE[0]}")/install_legacy_hstego.py"
 
 echo "HStego install complete."

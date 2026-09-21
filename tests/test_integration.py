@@ -14,6 +14,46 @@ c=importlib.util.module_from_spec(SPEC);sys.modules[SPEC.name]=c;SPEC.loader.exe
 
 @unittest.skipUnless(os.environ.get('CONFESS_NATIVE_TESTS')=='1','Set CONFESS_NATIVE_TESTS=1 with age/HStego installed')
 class NativeTests(unittest.TestCase):
+    def test_rgba_capacity_counts_only_embedded_rgb_channels(self):
+        import numpy as np
+        from PIL import Image
+        current = c._load_hstegolib()
+        with tempfile.TemporaryDirectory() as directory:
+            pixels = np.zeros((384, 384, 4), dtype=np.uint8)
+            cover = Path(directory) / 'cover.png'
+            Image.fromarray(pixels).save(cover)
+            self.assertEqual(c._hstego_capacity(cover, current, 's-uniward'), current.spatial_capacity(pixels[:, :, :3]))
+
+    def test_legacy_images_require_explicit_reader_and_preserve_payload(self):
+        import numpy as np
+        from PIL import Image
+        current = c._load_hstegolib()
+        spec = importlib.util.spec_from_file_location('legacy_loader_test', Path(c.__file__).with_name('hstego_legacy.py'))
+        loader = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(loader)
+        legacy = loader.load_legacy(current)
+        # Invalid old headers must be rejected BEFORE invoking the native decoder.
+        with patch.object(current.stc, 'stc_unhide', side_effect=AssertionError('native call')):
+            self.assertEqual(legacy.Stego().unhide_stc(np.zeros(64), 2**32), bytearray())
+        for suffix in ['.jpg', '.png']:
+            with self.subTest(suffix=suffix), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                cover = root / ('cover' + suffix)
+                Image.fromarray(np.random.default_rng(17).integers(0, 256, (384, 384, 3), dtype=np.uint8)).save(cover)
+                original = root / 'original.age'
+                original.write_bytes(b'age-encryption.org/v1\nSynthetic legacy compatibility fixture, not real testimony.\n')
+                artifact = root / ('legacy' + suffix)
+                stego = legacy.J_UNIWARD() if suffix == '.jpg' else legacy.S_UNIWARD()
+                if suffix == '.jpg':
+                    c._quiet_juniward_cost_debug(stego, legacy)
+                with c._suppress_native_output():
+                    stego.embed(str(cover), str(original), 'synthetic-legacy-password', str(artifact))
+                with self.assertRaises(RuntimeError):
+                    c._hstego_extract(artifact, root / 'wrong-format.age', 'synthetic-legacy-password')
+                recovered = root / 'recovered.age'
+                c._hstego_extract(artifact, recovered, 'synthetic-legacy-password', legacy=True)
+                self.assertEqual(recovered.read_bytes(), original.read_bytes())
+
     def test_jpeg_and_png_seal_extract_checksum_decrypt(self):
         import numpy as np
         from PIL import Image

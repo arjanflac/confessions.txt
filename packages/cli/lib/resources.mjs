@@ -66,6 +66,9 @@ If STEG was intentionally published, extraction can use the public value:
 
 ./confess extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
 
+For older HStego v0.5 images, add --legacy-hstego to extraction explicitly
+and check the original CSHA. New images use authenticated HStego 0.6.1.
+
 The MCP server does not run extraction or decryption commands. It explains
 public references, resolves public Base/Arweave references, validates public
 metadata shape, checks CSHA formatting, and generates local verification

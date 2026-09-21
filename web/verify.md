@@ -132,3 +132,5 @@ the artifact, extraction path, or public reference does not align.
 
 The browser verifier does not decrypt payloads in-browser. It prints local
 commands so the human can keep private material under local control.
+
+Older images created with HStego v0.5 require `--legacy-hstego` on the local extraction command. Choose legacy extraction explicitly in the menu, then compare the recovered payload against the original CSHA. New seals use HStego 0.6.1.

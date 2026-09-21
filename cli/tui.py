@@ -82,7 +82,10 @@ def _operation(core, state, choice):
     if choice == "2":
         image = _path("Locked image", state.artifact, must_exist=True)
         out = _path("Save encrypted payload as", "extracted_payload.age")
-        result = _execute(core, ["extract", _option("image", image), _option("out", out), "--stego-pass-prompt"])
+        argv = ["extract", _option("image", image), _option("out", out), "--stego-pass-prompt"]
+        if _yes("Was this image made with HStego v0.5 (an older CONFESSIONS.txt setup)?"):
+            argv.append("--legacy-hstego")
+        result = _execute(core, argv)
         if result == 0:
             state.payload = out
             state.csha = ""  # Never reuse a different record's checksum.

@@ -6,7 +6,7 @@ Run `./confess --help` for all options, or `./confess seal --help` for one opera
 
 ## Setup
 
-On macOS, run `bash scripts/bootstrap_mac.sh`. This installs Python 3.12, age, JPEG libraries, pinned Python dependencies, and HStego. The installer verifies the HStego v0.5 source commit before building it. Apple Silicon needs compatibility patches applied by `scripts/install_hstego_mac.sh`.
+On macOS, run `bash scripts/bootstrap_mac.sh`. This installs Python 3.12, age, JPEG libraries, pinned Python dependencies, and HStego. The installer verifies the HStego v0.6.1 source commit before building it. Apple Silicon needs compatibility patches applied by `scripts/install_hstego_mac.sh`.
 
 Homebrew and Xcode Command Line Tools must already be installed. An existing `.venv` must use Python 3.12. Move an incompatible environment aside before rerunning setup.
 
@@ -17,7 +17,7 @@ npm --prefix packages/cli ci --ignore-scripts
 ./confess doctor
 ```
 
-Linux requires Python 3.12 and its venv support, age, a C/C++ toolchain, libjpeg headers, and Python Tk support. Create a Python 3.12 virtual environment, install `requirements.txt`, then build HStego from commit `ca43b9f3ddd53757da0ae636331f12c3cbc64091`. The native Linux build has not been validated for this release; the macOS script is not portable to Linux. Windows is not supported by the POSIX age password bridge.
+Linux requires Python 3.12 and its venv support, age, a C/C++ toolchain, libjpeg headers, and Python Tk support. Create a Python 3.12 virtual environment, install `requirements.txt`, then build HStego from commit `bf71f6e0d7faaa632ad8a988c0393e94bfd13b2a`. The native Linux build has not been validated for this release; the macOS script is not portable to Linux. Windows is not supported by the POSIX age password bridge.
 
 ## Seal
 
@@ -57,6 +57,8 @@ Literal `--age-pass`, `--stego-pass`, and `--single-pass` arguments exist for co
 ./confess verify --file extracted_payload.age --csha <EXPECTED_CSHA> \
   --decrypt --age-pass-prompt --out decrypted_payload.tar.gz
 ```
+
+Older records made with HStego v0.5 need `--legacy-hstego` on the extraction command, or the legacy choice in the menu. The bootstrap installs a checksum-pinned compatibility reader with its license; on another supported environment, install it using `.venv/bin/python scripts/install_legacy_hstego.py`. The legacy reader uses the current decoder’s length checks and is never selected automatically or used for new seals. Always compare the recovered payload against the original CSHA.
 
 For a legacy single-password record, use `--single-pass-prompt` at both password steps. Extraction recognizes JPEG/PNG content even if the downloaded extension is wrong.
 
