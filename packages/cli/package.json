@@ -1,6 +1,6 @@
 {
   "name": "@confessionstxt/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command-line and MCP verification surface for CONFESSIONS.txt public artifact references.",
   "type": "module",
   "bin": {
@@ -37,7 +37,7 @@
     "directory": "packages/cli"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "publishConfig": {
     "access": "public"

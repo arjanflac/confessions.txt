@@ -87,3 +87,10 @@ guarantee of invisibility. Public verifiability comes from comparing
 There is no hosted sealing service in the current protocol. The CLI does not
 receive files, hold keys, custody wallets, or broadcast transactions. The
 operator controls disclosure.
+
+## Password disclosure
+
+Public STEG permits extraction and offline password guesses against the encrypted
+AGE payload. Use a strong, independently generated AGE password. A single-pass
+artifact becomes decryptable if its STEG password is published. Local file
+cleanup does not guarantee secure erasure from disks, backups, or snapshots.

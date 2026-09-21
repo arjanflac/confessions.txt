@@ -1,3 +1,4 @@
+import { fetchArweaveHead } from "./network.mjs";
 import { fetchBaseTransaction } from "./base.mjs";
 import {
   ARWEAVE_TXID_RE,
@@ -90,13 +91,13 @@ export async function fetchArweaveHeaders(txid, options = {}) {
     return {
       checked: false,
       ok: false,
-      errors: ["This Node runtime does not provide fetch. Use Node 18 or newer."]
+      errors: ["This Node runtime does not provide fetch. Use Node 22 or newer."]
     };
   }
 
   const url = `https://arweave.net/${checked.normalized}`;
   try {
-    const response = await fetchImpl(url, { method: "HEAD", redirect: "follow" });
+    const response = await fetchArweaveHead(url, options);
     const contentLength = response.headers.get("content-length");
     return {
       checked: true,
@@ -146,7 +147,7 @@ function createRecord(base) {
 
   if (record.artxid) record.arweaveUrl = `https://arweave.net/${record.artxid}`;
   const audit = buildAudit(record);
-  record.auditCommands = audit.commands;
+  record.auditCommands = record.errors.length || audit.errors.length ? "" : audit.commands;
   record.warnings.push(...audit.warnings);
   record.notes.push(...audit.notes);
   record.errors.push(...audit.errors);
@@ -155,7 +156,7 @@ function createRecord(base) {
 }
 
 async function withArtifactCheck(record, options) {
-  if (!record.artxid || options.checkArtifact === false) return record;
+  if (!record.valid || !record.artxid || options.checkArtifact === false) return record;
   const artifact = await fetchArweaveHeaders(record.artxid, options);
   record.artifact = artifact;
   if (artifact.errors?.length) {
@@ -171,6 +172,7 @@ function recordFromParsedLabel(input, parsed, baseTxHash = null) {
   const csha = fields.csha && validateCsha(fields.csha).valid ? validateCsha(fields.csha).normalized : fields.csha;
 
   if (!fields.artxid) errors.push("Public metadata label does not include ARTXID.");
+  if (!fields.csha) errors.push("Public metadata label does not include CSHA; payload verification is unavailable.");
 
   return createRecord({
     status: errors.length ? "invalid_label" : "resolved",
@@ -269,11 +271,12 @@ export async function resolveVerificationReference(reference, options = {}) {
     record.type = "base_transaction_hash";
     record.input = input;
     record.rawMetadata = fetched.rawMetadata;
+    record.notes.push("Transaction inclusion is reported by a public RPC. Finality, receipt status, author identity, and payload checksum are not independently verified.");
     return withArtifactCheck(record, options);
   }
 
   if (classified.type === "metadata_label") {
-    const parsed = parseMetadataLabel(normalizeWhitespace(classified.normalized));
+    const parsed = parseMetadataLabel(classified.normalized);
     const record = recordFromParsedLabel(classified.normalized, parsed, null);
     return withArtifactCheck(record, options);
   }

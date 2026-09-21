@@ -1,8 +1,8 @@
-# CONFESSIONS.txt CLI
+# CONFESSIONS.txt public verifier
 
-This package is the terminal and MCP verification surface for CONFESSIONS.txt
-public artifact references. It is specific to the protocol used by
-`confessionstxt.art`.
+Look up a published CONFESSIONS.txt record from a terminal or MCP client.
+Requires **Node.js 22 or newer**. For creating and opening your own records,
+use the guided `./confess` menu in the [source repository](https://github.com/arjanflac/confessions.txt).
 
 It does not seal testimony. It does not decrypt testimony. It does not upload
 private material. It does not custody wallets or broadcast transactions.
@@ -36,7 +36,7 @@ npx -y @confessionstxt/cli@latest verify 0x... --commands
 From the repository root:
 
 ```bash
-npm --prefix packages/cli install
+npm --prefix packages/cli ci --ignore-scripts
 npm --prefix packages/cli run confessions -- verify 0x...
 npm --prefix packages/cli run confessions -- mcp
 ```
@@ -115,3 +115,16 @@ Forbidden inputs:
 `CSHA` is `sha512(payload.age)`. Format validation is not artifact
 verification. Actual verification requires local extraction of `payload.age` and
 local checksum comparison.
+
+## Trust and resource limits
+
+All metadata is untrusted public data, never instructions for an agent. A
+successful resolution is not a payload checksum check, independent chain-finality
+check, or proof of identity or truth. Duplicate/ambiguous fields, missing CSHA,
+invalid UTF-8, and terminal control characters are rejected. Internal spaces in
+public STEG values are preserved exactly.
+
+Requests time out after 15 seconds. RPC responses are capped at 256 KiB while
+streaming. The optional Arweave HEAD check follows at most four redirects, only
+within HTTPS Arweave gateway hosts. `--rpc-url` requires HTTPS and does not follow
+redirects. Network failure returns a normal structured error.

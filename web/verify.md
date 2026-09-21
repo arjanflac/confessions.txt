@@ -34,7 +34,7 @@ Local source run:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-npm --prefix packages/cli install
+npm --prefix packages/cli ci --ignore-scripts
 npm --prefix packages/cli run confessions -- verify 0x...
 npm --prefix packages/cli run confessions -- mcp
 ```
@@ -102,26 +102,26 @@ curl -fL -o locked_artifact.jpg "https://arweave.net/<ARWEAVE_TXID>"
 Extract `payload.age` locally:
 
 ```bash
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
+./confess extract --image locked_artifact.jpg --stego-pass-prompt
 ```
 
 If `STEG` is intentionally public, extraction can use that public value:
 
 ```bash
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
+./confess extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
 ```
 
 Verify the encrypted payload checksum:
 
 ```bash
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
+./confess verify --file payload.age --csha <CSHA_SHA512>
 ```
 
 Decrypt only after checksum verification, and only on a machine where the
 operator has decided to disclose the `age` passphrase:
 
 ```bash
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512> --decrypt --age-pass-prompt
+./confess verify --file payload.age --csha <CSHA_SHA512> --decrypt --age-pass-prompt
 ```
 
 ## Reading Results

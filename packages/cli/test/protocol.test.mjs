@@ -82,6 +82,6 @@ test("generateLocalVerificationSteps treats public_steg as explicit public mater
   });
 
   assert.equal(steps.valid, true);
-  assert.match(steps.commands, /--stego-pass 'public-pass'/);
+  assert.match(steps.commands, /--stego-pass='public-pass'/);
   assert.ok(steps.warnings.some((warning) => warning.includes("public_steg")));
 });

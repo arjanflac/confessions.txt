@@ -10,15 +10,9 @@ const BASE_TX = "0x" + "c".repeat(64);
 const LABEL = `WHISTLEBLOWING | ARTXID:${ARTXID} | CSHA:${CSHA} | STEG:public-steg`;
 
 test("resolveVerificationReference resolves a Base transaction through public calldata", async () => {
-  const fetchImpl = async () => ({
-    ok: true,
-    json: async () => ({
-      result: {
-        hash: BASE_TX,
-        input: asciiToHex(LABEL)
-      }
-    })
-  });
+  const fetchImpl = async () => new Response(JSON.stringify({
+    result: { hash: BASE_TX, input: asciiToHex(LABEL), chainId: '0x2105', blockNumber: '0x42', blockHash: BASE_TX }
+  }), { headers: { 'content-type': 'application/json' } });
 
   const record = await resolveVerificationReference(BASE_TX, {
     fetchImpl,

@@ -1,3 +1,8 @@
+function terminalSafe(value) {
+  return String(value).replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/g,
+    char => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`);
+}
+
 import { formatBytes } from "./verify.mjs";
 
 function quoteTitle(title) {
@@ -23,7 +28,7 @@ function artifactLine(artifact) {
 
 export function formatVerificationText(record, options = {}) {
   if (options.commandsOnly) {
-    return record.auditCommands ? `${record.auditCommands}\n` : "";
+    return record.auditCommands ? terminalSafe(`${record.auditCommands}\n`) : "";
   }
 
   let output = "";
@@ -56,7 +61,7 @@ export function formatVerificationText(record, options = {}) {
     output += `NOTES\n${notes.map((note) => `- ${note}`).join("\n")}\n`;
   }
 
-  return output.endsWith("\n") ? output : `${output}\n`;
+  return terminalSafe(output.endsWith("\n") ? output : `${output}\n`);
 }
 
 export function formatVerificationJson(record) {

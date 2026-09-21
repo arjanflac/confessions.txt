@@ -28,7 +28,7 @@ test("CLI accepts the reference as the first argument and prints commands only",
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /curl -fL -o locked_artifact\.jpg/);
-  assert.match(result.stdout, /python3 cli\/confess\.py verify/);
+  assert.match(result.stdout, /\.\/confess verify/);
   assert.doesNotMatch(result.stdout, /CONFESSIONS\.txt/);
 });
 
@@ -42,3 +42,8 @@ test("CLI exposes help and version", () => {
   assert.match(version.stdout, /^\d+\.\d+\.\d+/);
 });
 
+test("option terminator keeps a leading-dash reference as metadata", () => {
+  const result = runCli(["verify", "--json", "--no-artifact-check", "--", "--help " + LABEL]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).title, "--help Proof");
+});

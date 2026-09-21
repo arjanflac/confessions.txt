@@ -59,12 +59,12 @@ npx -y @confessionstxt/cli@latest mcp
 
 The CLI commands relevant to verification are:
 
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
+./confess extract --image locked_artifact.jpg --stego-pass-prompt
+./confess verify --file payload.age --csha <CSHA_SHA512>
 
 If STEG was intentionally published, extraction can use the public value:
 
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
+./confess extract --image locked_artifact.jpg --stego-pass "<PUBLIC_STEG>"
 
 The MCP server does not run extraction or decryption commands. It explains
 public references, resolves public Base/Arweave references, validates public

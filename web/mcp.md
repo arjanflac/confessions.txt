@@ -61,7 +61,7 @@ From a local checkout:
 ```bash
 git clone https://github.com/arjanflac/confessions.txt
 cd confessions.txt
-npm --prefix packages/cli install
+npm --prefix packages/cli ci --ignore-scripts
 npm --prefix packages/cli run confessions -- verify 0x...
 npm --prefix packages/cli run confessions -- mcp
 ```
@@ -96,8 +96,8 @@ and remote-model privacy boundary.
 CLI usage guide: local extraction and checksum commands:
 
 ```bash
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
+./confess extract --image locked_artifact.jpg --stego-pass-prompt
+./confess verify --file payload.age --csha <CSHA_SHA512>
 ```
 
 ### `confessions://mcp-boundary`
@@ -169,8 +169,8 @@ Output may include:
 
 ```bash
 curl -fL -o locked_artifact.jpg "https://arweave.net/<ARWEAVE_TXID>"
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
+./confess extract --image locked_artifact.jpg --stego-pass-prompt
+./confess verify --file payload.age --csha <CSHA_SHA512>
 ```
 
 If `public_steg` is explicitly provided, the extraction command may include the
