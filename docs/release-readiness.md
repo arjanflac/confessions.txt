@@ -16,7 +16,7 @@ Validated on macOS Apple Silicon on 2026-09-21:
 - npm and PyPI advisory scans reported no known vulnerabilities in scanned dependencies. HStego is a source install and is not covered by the PyPI advisory lookup.
 - Source/history secret scans found no detected credentials. Personal artifact tests and generated records remain outside public commits in ignored local audit storage.
 
-Run the reproducible checks in the [README](../README.md#details-and-development) and `scripts/check_package.mjs` before a later release. Native tests are opt-in; the CI matrix runs the portable tests on Node 22/24 with Python 3.12. GitHub Actions also runs on `release/**` branches so the final candidate can pass both jobs before advancing `main`.
+Run the reproducible checks in the [README](../README.md#details-and-development) and `node scripts/sync_web_modules.mjs --check` before a later release. Native tests are opt-in; the CI matrix runs the portable tests on Node 22/24 with Python 3.12. GitHub Actions also runs on `release/**` branches so the final candidate can pass both jobs before advancing `main`.
 
 ## Production configuration at the start of the review
 
@@ -32,6 +32,16 @@ The existing live site injected a Cloudflare Insights beacon blocked by its CSP.
 - **Native HStego is not comprehensively audited.** The pinned source and local integration work, but its C/C++ image processing remains a trust boundary. Linux/Intel builds were not validated for this candidate.
 - **npm is published separately.** The registry version at the start of the review was 0.1.0. Verify the registry's current version and package integrity separately from GitHub and the website.
 - There is no new independent assessment of chain finality, gateway uptime, anonymity, or an arbitrary human-chosen password's strength. See [the security model](security.md).
+
+## Previewing website changes
+
+The public verifier is hosted at [confessionstxt.art/verify](https://confessionstxt.art/verify). A local server is only needed when working on the website:
+
+```bash
+python3 scripts/serve_web.py
+```
+
+This serves the site at `http://127.0.0.1:8765` with its security headers. `web/` is the static Pages output; there is no build step. When changing shared verifier modules, run `node scripts/sync_web_modules.mjs` and commit the browser copies with the originals.
 
 ## Release procedure when publication is authorized
 

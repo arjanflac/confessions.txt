@@ -14,6 +14,13 @@ The public record lets someone check that they recovered the same encrypted file
 
 There is no account and no hosted service that receives your text or decrypts it. A guided terminal menu walks you through the process; the [public verifier](https://confessionstxt.art/verify) looks up published records.
 
+## How a record works
+
+1. **Write** your confession in a local text file and choose a cover image.
+2. **Seal** it: the app packs the text into an archive, encrypts it with age, and hides the encrypted file inside the image with HStego.
+3. **Keep or publish** the image. Optional publication stores it on Arweave and records its location and encrypted-file checksum on Base.
+4. **Verify or read** it later: extract the encrypted file and compare its checksum with the public record or your saved checksum. Reading the text requires the separate AGE password.
+
 ## Start here
 
 The tested setup is **macOS on Apple Silicon**, with Homebrew and Xcode Command Line Tools installed:
@@ -31,13 +38,16 @@ Use a **separate private folder for each record**, outside cloud sync. Run the l
 
 The menu can:
 
-- **Seal** a text file inside a JPEG or PNG, with two strong random passwords by default.
-- **Check** an encrypted payload's checksum, extract it from an image, or decrypt it locally.
+- **Seal** a text file inside a JPEG or PNG, with two strong random passwords by default (`seal`).
+- **Extract** the encrypted file from an image (`extract`).
+- **Check** its checksum and optionally decrypt it locally (`verify`).
 - **Look up** a public reference with Node.js 22 or newer installed.
-- **Publish** the image to Arweave after a separate confirmation, or prepare transaction data for Base.
-- **Check setup** and configure a wallet when you need one.
+- **Publish** the image to Arweave after a separate confirmation (`push`), or prepare transaction data for Base (`mint`).
+- **Check setup** (`doctor`) and configure a wallet when you need one (`init`).
 
 It remembers the current artifact and checksum while it is open. Ctrl-C cancels the current step; at the main menu it exits. Existing files are protected from accidental overwrites.
+
+The menu and individual commands use the same code. Run `./confess --help` to see all commands, or `./confess seal --help` for one step's options. The [terminal reference](docs/cli.md) has complete command examples, advanced setup, and legacy-record instructions.
 
 ## What sealing creates
 
@@ -96,9 +106,7 @@ npm --prefix packages/cli test
 # Optional real age/HStego round trips, using synthetic text only:
 CONFESS_NATIVE_TESTS=1 .venv/bin/python -m unittest discover -s tests
 
-node scripts/sync_web_modules.mjs --check
 node scripts/check_package.mjs
-python3 scripts/serve_web.py
 ```
 
-The last command serves the site at `http://127.0.0.1:8765`, with its security headers. `web/` is the static Pages output; there is no build step. When changing shared verifier modules, run `node scripts/sync_web_modules.mjs` and commit the browser copies with the originals.
+**CripTech**

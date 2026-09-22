@@ -61,16 +61,16 @@ it:
 
 ## CLI Surface
 
-The CLI is command-oriented:
+Run `./confess` to open the guided menu. The same operations are available as individual commands; see the [terminal reference](https://github.com/arjanflac/confessions.txt/blob/main/docs/cli.md) for all options.
 
 ```bash
-python3 cli/confess.py doctor
-python3 cli/confess.py init
-python3 cli/confess.py seal --image cover.jpg --text testimony.md --gen-split-pass
-python3 cli/confess.py push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ENTITY_ID>
-python3 cli/confess.py mint --title "Proof of Omerta" --txid <ARWEAVE_TXID> --csha <CSHA_SHA512>
-python3 cli/confess.py extract --image locked_artifact.jpg --stego-pass-prompt
-python3 cli/confess.py verify --file payload.age --csha <CSHA_SHA512>
+./confess doctor
+./confess init
+./confess seal --image cover.jpg --text testimony.md --gen-split-pass --secrets-file record.secrets.json
+./confess push --file locked_artifact.jpg --folder-id <ARDRIVE_FOLDER_ENTITY_ID> --ack-permanent-upload
+./confess mint --title "Proof of Omerta" --txid <ARWEAVE_TXID> --csha <CSHA_SHA512>
+./confess extract --image locked_artifact.jpg --stego-pass-prompt --out extracted_payload.age
+./confess verify --file extracted_payload.age --csha <CSHA_SHA512>
 ```
 
 Split-pass mode separates extraction from decryption. The stego passphrase can
@@ -84,9 +84,9 @@ Encryption comes from `age`. Steganography is concealment and transport, not a
 guarantee of invisibility. Public verifiability comes from comparing
 `sha512(payload.age)` to `CSHA`.
 
-There is no hosted sealing service in the current protocol. The CLI does not
-receive files, hold keys, custody wallets, or broadcast transactions. The
-operator controls disclosure.
+Sealing and decryption happen locally. Arweave publication uses ArDrive and
+your wallet file to sign and send a paid upload. For Base, the application
+only prepares transaction data; you sign and send it from your own wallet.
 
 ## Password disclosure
 
